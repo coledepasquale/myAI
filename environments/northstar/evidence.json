@@ -1,0 +1,58 @@
+[
+  {
+    "id": "11111111-1111-4111-8111-111111111111",
+    "kind": "observation",
+    "source": "sales-shadowing-01",
+    "content": "Sales reps prepare customer quotes by opening the CRM, checking current inventory, consulting a pricing workbook, reviewing discount policy, drafting a proposal, and routing higher-discount quotes to a manager. Reps estimate the process takes about 20-25 minutes for a routine request.",
+    "metadata": {"department": "Sales", "sample_size": 6}
+  },
+  {
+    "id": "22222222-2222-4222-8222-222222222222",
+    "kind": "metric",
+    "source": "sales-ops-monthly-report",
+    "content": "The sales team processed 1,382 quote requests in the trailing 12 months.",
+    "metadata": {"metric": "quote_requests_trailing_12m", "value": 1382}
+  },
+  {
+    "id": "33333333-3333-4333-8333-333333333333",
+    "kind": "document",
+    "source": "discount-policy-v4",
+    "content": "Discounts at or below 5% may be approved by the account owner. Discounts above 5% and at or below 12% require a sales manager. Discounts above 12% require VP Sales approval. Customer-facing quotes must not be sent before required approval is recorded.",
+    "metadata": {"department": "Sales", "policy": true}
+  },
+  {
+    "id": "44444444-4444-4444-8444-444444444444",
+    "kind": "observation",
+    "source": "support-shadowing-02",
+    "content": "Support agents manually triage inbound requests into billing, installation, outage, account, and product categories. Most tickets are categorized in under two minutes; unusual multi-site requests require judgment.",
+    "metadata": {"department": "Customer Support", "sample_size": 4}
+  },
+  {
+    "id": "55555555-5555-4555-8555-555555555555",
+    "kind": "metric",
+    "source": "support-dashboard",
+    "content": "Support receives approximately 860 tickets per month. Median first-response time is 34 minutes and median triage time is 1.6 minutes.",
+    "metadata": {"department": "Customer Support"}
+  },
+  {
+    "id": "66666666-6666-4666-8666-666666666666",
+    "kind": "observation",
+    "source": "finance-interview-01",
+    "content": "A finance analyst spends roughly four hours each Friday gathering numbers from three systems and formatting the weekly operations report. Leadership values the report, but several sections are rarely discussed.",
+    "metadata": {"department": "Finance"}
+  },
+  {
+    "id": "77777777-7777-4777-8777-777777777777",
+    "kind": "observation",
+    "source": "procurement-interview-01",
+    "content": "Procurement exceptions are uncommon but high consequence. Requests may require supplier qualification, insurance certificates, or legal review, and policy interpretation changes by category.",
+    "metadata": {"department": "Procurement"}
+  },
+  {
+    "id": "88888888-8888-4888-8888-888888888888",
+    "kind": "document",
+    "source": "employee-handbook-search-log-summary",
+    "content": "Employees frequently search for travel, expense, parental leave, and equipment policies. Search analytics show about 310 policy searches per month, but no reliable measure exists for how many require human assistance.",
+    "metadata": {"department": "Leadership/Admin"}
+  }
+]
