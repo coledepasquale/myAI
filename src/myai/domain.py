@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 from uuid import UUID, uuid4
@@ -107,7 +107,7 @@ class ModelInvocation(BaseModel):
     model: str
     prompt_version: str
     input_hash: str
-    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    started_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     latency_ms: int | None = Field(default=None, ge=0)
     input_tokens: int | None = Field(default=None, ge=0)
     output_tokens: int | None = Field(default=None, ge=0)
@@ -118,12 +118,12 @@ class Run(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     experiment: str
     seed: int
-    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    started_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     invocations: list[ModelInvocation] = Field(default_factory=list)
     opportunities: list[Opportunity] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def unique_opportunity_ids(self) -> "Run":
+    def unique_opportunity_ids(self) -> Run:
         ids = [item.id for item in self.opportunities]
         if len(ids) != len(set(ids)):
             raise ValueError("opportunity IDs must be unique within a run")
