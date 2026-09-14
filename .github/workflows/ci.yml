@@ -2,8 +2,9 @@ name: ci
 
 on:
   push:
-    branches: [main, foundation-v0.1]
+    branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   test:
