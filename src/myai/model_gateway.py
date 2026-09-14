@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from typing import Generic, Protocol, TypeVar
+from typing import Protocol
 
 from pydantic import BaseModel
-
-T = TypeVar("T", bound=BaseModel)
 
 
 class ModelRequest(BaseModel):
@@ -15,7 +13,7 @@ class ModelRequest(BaseModel):
     temperature: float = 0.0
 
 
-class ModelResult(BaseModel, Generic[T]):
+class ModelResult[T: BaseModel](BaseModel):
     value: T
     provider: str
     model: str
@@ -29,7 +27,11 @@ class ModelResult(BaseModel, Generic[T]):
 class StructuredModel(Protocol):
     provider_name: str
 
-    def generate(self, request: ModelRequest, schema: type[T]) -> ModelResult[T]:
+    def generate[T: BaseModel](
+        self,
+        request: ModelRequest,
+        schema: type[T],
+    ) -> ModelResult[T]:
         """Generate a schema-constrained result.
 
         Provider adapters must implement this boundary. Domain code must not import
