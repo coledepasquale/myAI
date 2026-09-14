@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
+from pydantic import TypeAdapter
+
 from myai.domain import Evidence
+
+_COMPANY_ADAPTER = TypeAdapter(dict[str, object])
+_EVIDENCE_ADAPTER = TypeAdapter(list[Evidence])
 
 
 class CompanyFixture:
@@ -11,11 +15,10 @@ class CompanyFixture:
         self.root = root
 
     def company(self) -> dict[str, object]:
-        return json.loads((self.root / "company.json").read_text())
+        return _COMPANY_ADAPTER.validate_json((self.root / "company.json").read_text())
 
     def evidence(self) -> list[Evidence]:
-        payload = json.loads((self.root / "evidence.json").read_text())
-        return [Evidence.model_validate(item) for item in payload]
+        return _EVIDENCE_ADAPTER.validate_json((self.root / "evidence.json").read_text())
 
 
 def northstar_fixture(repo_root: Path | None = None) -> CompanyFixture:
