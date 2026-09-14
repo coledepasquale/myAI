@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+
 from pydantic import BaseModel, Field
 
 from myai.domain import Opportunity
@@ -13,11 +14,13 @@ class BaselineOutput(BaseModel):
     opportunities: list[Opportunity] = Field(default_factory=list)
 
 
-BASELINE_SYSTEM = """You are evaluating a company for AI/software modernization opportunities.
-Use only the evidence supplied. Rank opportunities by expected business value, confidence, feasibility,
-and implementation cost. Every opportunity must cite at least one evidence ID. Expose assumptions instead
-of silently inventing facts. Prefer bounded, measurable interventions over vague transformation advice.
-"""
+BASELINE_SYSTEM = (
+    "You are evaluating a company for AI/software modernization opportunities.\n"
+    "Use only the evidence supplied. Rank opportunities by expected business value, "
+    "confidence, feasibility, and implementation cost. Every opportunity must cite at "
+    "least one evidence ID. Expose assumptions instead of silently inventing facts. "
+    "Prefer bounded, measurable interventions over vague transformation advice."
+)
 
 
 def _stable_hash(payload: str) -> str:
