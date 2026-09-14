@@ -12,3 +12,4 @@ venv/
 *.sqlite3
 runs/
 artifacts/
+benchmarks/private/
