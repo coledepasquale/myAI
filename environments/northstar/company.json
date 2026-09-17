@@ -1,0 +1,30 @@
+{
+  "company_id": "northstar-industrial-services",
+  "name": "Northstar Industrial Services",
+  "employee_count": 82,
+  "annual_revenue_usd": 18400000,
+  "description": "A fictional regional industrial-services company used as a controlled modernization benchmark.",
+  "departments": [
+    {"name": "Sales", "headcount": 14},
+    {"name": "Operations", "headcount": 28},
+    {"name": "Customer Support", "headcount": 12},
+    {"name": "Finance", "headcount": 8},
+    {"name": "Procurement", "headcount": 6},
+    {"name": "Engineering", "headcount": 9},
+    {"name": "Leadership/Admin", "headcount": 5}
+  ],
+  "systems": [
+    {"name": "Atlas CRM", "kind": "crm"},
+    {"name": "Beacon Desk", "kind": "ticketing"},
+    {"name": "LedgerPro", "kind": "finance"},
+    {"name": "Stockroom", "kind": "inventory"},
+    {"name": "DriveBox", "kind": "document_store"},
+    {"name": "Mail", "kind": "email"}
+  ],
+  "objectives": [
+    "reduce avoidable labor without degrading quality",
+    "shorten customer response time",
+    "preserve policy and approval controls",
+    "increase operational visibility"
+  ]
+}
