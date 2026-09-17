@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from myai.domain import Opportunity
 from myai.fixtures import CompanyFixture
-from myai.model_gateway import ModelRequest, StructuredModel
+from myai.model_gateway import ModelRequest, ModelResult, StructuredModel
 
 
 class BaselineOutput(BaseModel):
@@ -38,8 +38,17 @@ def build_baseline_request(fixture: CompanyFixture, model: str) -> ModelRequest:
         user=user,
         model=model,
         prompt_version="baseline-v0.1",
-        temperature=0.0,
+        max_output_tokens=8192,
     )
+
+
+def run_baseline_result(
+    fixture: CompanyFixture,
+    gateway: StructuredModel,
+    model: str,
+) -> ModelResult[BaselineOutput]:
+    request = build_baseline_request(fixture, model)
+    return gateway.generate(request, BaselineOutput)
 
 
 def run_baseline(
@@ -47,9 +56,7 @@ def run_baseline(
     gateway: StructuredModel,
     model: str,
 ) -> BaselineOutput:
-    request = build_baseline_request(fixture, model)
-    result = gateway.generate(request, BaselineOutput)
-    return result.value
+    return run_baseline_result(fixture, gateway, model).value
 
 
 def baseline_input_hash(fixture: CompanyFixture, model: str) -> str:
