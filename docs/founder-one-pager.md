@@ -26,8 +26,8 @@ A new category is forming around AI transformation. That is validation, not proo
 
 The market is early but active.
 
-- **Within (formerly Klarity)** is the strongest horizontal threat: it maps how organizations work, identifies AI opportunities, and builds agents. It is much larger and better funded than the newest entrants, but its broad "company brain / AI transformation" positioning is recent.
-- **Foaster, Ontora, Marker, Terminal Use, Autostep, Sona8, and Trace** are young AI-native companies attacking pieces of discovery, process mapping, implementation, and transformation. Many are teams of only one to four people.
+- **Within (formerly Klarity)** is the strongest horizontal threat: it maps how organizations work, identifies AI opportunities, and builds agents. It is much larger and better funded than the newest entrants, but its broad “company brain / AI transformation” positioning is recent.
+- **Foaster, Ontora, Marker, Terminal Use, Autostep, Sona8, and Trace** are young AI-native companies attacking pieces of discovery, process mapping, implementation, and transformation. Many are very small teams.
 - **Workhelix** focuses on AI opportunity/ROI measurement.
 - **Celonis and UiPath** bring mature process intelligence / task mining and enterprise distribution.
 - **Accenture and other consultancies** validate enormous willingness to spend on AI transformation, but their delivery model is labor-heavy.
@@ -48,13 +48,13 @@ The technical thesis we want to test is one step further:
 
 > Can a system close the loop from evidence to intervention to objective evaluation with materially less human consulting?
 
-That means the defensible layer would not be "we have better prompts." It would be the accumulated machinery and data around company modeling, evidence provenance, opportunity calibration, intervention generation, safe evaluation, outcome measurement, and eventually repeated transformation trajectories.
+That means the defensible layer would not be “we have better prompts.” It would be the accumulated machinery and data around company modeling, evidence provenance, opportunity calibration, intervention generation, safe evaluation, outcome measurement, and eventually repeated transformation trajectories.
 
 ## The experiment
 
 We are starting with a controlled synthetic company, **Northstar Industrial Services**, rather than a live customer.
 
-We will compare:
+We compare:
 
 **Control:** frontier model + all allowed company context + an excellent one-shot prompt.
 
@@ -62,11 +62,33 @@ We will compare:
 
 If our structured system does not materially outperform the control, we simplify or stop.
 
+The control must be strong enough to falsify the project. Our current model plan is:
+
+- Sonnet 5 for development/reference runs;
+- Opus 5 as the primary strong official baseline;
+- Fable 5.1 as a frontier ceiling/stress test.
+
+## Current status — 2026-09-17
+
+**Completed:**
+
+- typed domain/evidence foundation;
+- provider-independent LLM boundary;
+- Northstar synthetic fixture;
+- CI/tests/CLI;
+- real Anthropic structured-output adapter;
+- immutable local experiment artifacts;
+- first successful Sonnet 5 end-to-end smoke run.
+
+The first smoke run produced plausible quote, weekly-finance-report, support-triage, and policy-assistant opportunities with valid evidence citations. That proves the harness works; it does **not** prove the rankings or ROI values are correct.
+
+**Next:** build and freeze the private benchmark/evaluator and randomized Northstar cases **before** running the official Opus/Fable baseline suite or building the structured Company Model/opportunity engine.
+
 ## What success looks like
 
 A compelling POC would be able to say something like:
 
-> "I found 37 modernization opportunities. These five are high confidence. The top one is supported by specific workflow evidence, is worth approximately $X/year under explicit assumptions, and I have already built and tested a candidate intervention. It passes hidden policy/correctness cases and materially improves cycle time/cost."
+> “I found 37 modernization opportunities. These five are high confidence. The top one is supported by specific workflow evidence, is worth approximately $X/year under explicit assumptions, and I have already built and tested a candidate intervention. It passes hidden policy/correctness cases and materially improves cycle time/cost.”
 
 Then it should transfer to a second company without rewriting the core architecture.
 
@@ -77,17 +99,20 @@ Then it should transfer to a second company without rewriting the core architect
 - no polished SaaS dashboard;
 - no autonomous production deployment;
 - no vertical lock-in;
-- no months of infrastructure before proving differentiated intelligence.
+- no months of infrastructure before proving differentiated intelligence;
+- no large official baseline batch before the evaluator is frozen.
 
 ## Near-term plan
 
-**M0 — Foundation:** typed domain model, evidence provenance, provider-independent LLM interface, synthetic company fixture, reproducible runs, CLI, tests, CI.
+**M0 — Foundation:** complete.
 
-**M1 — Baseline:** execute and persist repeated frontier-model baseline runs.
+**M1 — Live baseline harness:** complete; first Sonnet smoke run successful.
 
-**M2 — Company model:** infer explicit workflows/systems/relationships from evidence.
+**M1.5 — Benchmark freeze:** next. Build public scoring interfaces, private ground-truth cases, randomized variants, and a frozen baseline configuration.
 
-**M3 — Opportunity engine:** generate, challenge, substantiate, rank, and calibrate modernization opportunities.
+**M2 — Company model:** infer explicit workflows/systems/relationships from the same observable evidence.
+
+**M3 — Opportunity engine:** generate, challenge, substantiate, rank, and calibrate modernization opportunities against the frozen evaluator.
 
 **M4/M5 — Closed loop:** implement one bounded intervention and evaluate it against hidden cases and business proxies.
 
@@ -97,8 +122,10 @@ Then it should transfer to a second company without rewriting the core architect
 
 This project earns more time only when the evidence improves.
 
-If the intelligence reduces to "Claude with a good prompt," if every customer would require bespoke engineering, or if interventions cannot be evaluated objectively, we should stop or radically simplify.
+If the intelligence reduces to “Claude with a good prompt,” if every customer would require bespoke engineering, or if interventions cannot be evaluated objectively, we should stop or radically simplify.
 
-If the system reliably finds important opportunities that the baseline misses, grounds them in evidence, builds safe interventions, and measures improvement, then we have earned the right to test it with real organizations.
+If the system reliably finds important opportunities that the strong baseline misses, grounds them in evidence, builds safe interventions, and measures improvement, then we have earned the right to test it with real organizations.
 
-**Current stance (September 2026): build the POC; do not yet build the company.**
+**Current stance (September 2026): continue the POC; do not yet build the company.**
+
+For full continuation context, see [`PROJECT_STATE.md`](./PROJECT_STATE.md).
