@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelRequest(BaseModel):
@@ -10,7 +10,7 @@ class ModelRequest(BaseModel):
     user: str
     model: str
     prompt_version: str
-    temperature: float = 0.0
+    max_output_tokens: int = Field(default=8192, ge=1)
 
 
 class ModelResult[T: BaseModel](BaseModel):
@@ -34,7 +34,7 @@ class StructuredModel(Protocol):
     ) -> ModelResult[T]:
         """Generate a schema-constrained result.
 
-        Provider adapters must implement this boundary. Domain code must not import
-        provider SDKs directly.
+        Provider adapters own provider/model-specific request behavior. Domain code
+        should not assume that sampling or reasoning parameters are portable.
         """
         ...
