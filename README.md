@@ -26,6 +26,14 @@ Put your key only in the local `.env` file:
 ANTHROPIC_API_KEY=your_key_here
 ```
 
+If the key is not scoped to a single Claude workspace, also set the workspace ID:
+
+```text
+ANTHROPIC_WORKSPACE_ID=wrkspc_...
+```
+
+You can find the workspace ID in Claude Console under **Settings → Workspaces**. A key created for one specific workspace does not need `ANTHROPIC_WORKSPACE_ID`.
+
 `.env` is git-ignored. Never commit API keys.
 
 Verify the foundation:

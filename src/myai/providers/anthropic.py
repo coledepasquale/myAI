@@ -26,8 +26,16 @@ def estimate_cost_usd(model: str, input_tokens: int, output_tokens: int) -> floa
 class AnthropicStructuredModel:
     provider_name = "anthropic"
 
-    def __init__(self, api_key: str) -> None:
-        self._client = Anthropic(api_key=api_key, timeout=120.0, max_retries=2)
+    def __init__(self, api_key: str, workspace_id: str | None = None) -> None:
+        default_headers = (
+            {"anthropic-workspace-id": workspace_id} if workspace_id is not None else None
+        )
+        self._client = Anthropic(
+            api_key=api_key,
+            timeout=120.0,
+            max_retries=2,
+            default_headers=default_headers,
+        )
 
     def generate[T: BaseModel](
         self,

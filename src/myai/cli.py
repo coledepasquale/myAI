@@ -85,13 +85,17 @@ def baseline(
     evidence = fixture.evidence()
     known_evidence_ids = {item.id for item in evidence}
 
+    settings = Settings()
     try:
-        api_key = Settings().require_anthropic_api_key()
+        api_key = settings.require_anthropic_api_key()
     except RuntimeError as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
 
-    gateway = AnthropicStructuredModel(api_key)
+    gateway = AnthropicStructuredModel(
+        api_key,
+        workspace_id=settings.optional_anthropic_workspace_id(),
+    )
     request = build_baseline_request(fixture, model)
     input_hash = baseline_input_hash(fixture, model)
 
