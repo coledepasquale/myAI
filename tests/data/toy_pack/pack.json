@@ -1,0 +1,86 @@
+{
+  "pack_version": "toy-v1",
+  "category_rules": [
+    {
+      "category_id": "alpha_automation",
+      "label": "Alpha workflow automation",
+      "keywords": ["alpha", "alpha workflow"]
+    },
+    {
+      "category_id": "beta_triage",
+      "label": "Beta request triage",
+      "keywords": ["beta", "triage"]
+    },
+    {
+      "category_id": "gamma_reporting",
+      "label": "Gamma reporting",
+      "keywords": ["gamma", "report"]
+    },
+    {
+      "category_id": "delta_decoy",
+      "label": "Delta decoy initiative",
+      "keywords": ["delta", "decoy"]
+    },
+    {
+      "category_id": "epsilon_unsized",
+      "label": "Epsilon assistant of unknown value",
+      "keywords": ["epsilon", "assistant"]
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "toy-001",
+      "variant_id": "toy-alpha-first",
+      "company": {"name": "Toy Co", "employee_count": 10},
+      "evidence": [
+        {
+          "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          "kind": "observation",
+          "source": "toy-observation",
+          "content": "Staff perform the alpha workflow by hand."
+        },
+        {
+          "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "kind": "metric",
+          "source": "toy-metric",
+          "content": "Beta requests arrive 100 times per month."
+        }
+      ]
+    },
+    {
+      "case_id": "toy-002",
+      "variant_id": "toy-beta-first",
+      "company": {"name": "Toy Co", "employee_count": 10},
+      "evidence": [
+        {
+          "id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          "kind": "observation",
+          "source": "toy-observation-2",
+          "content": "Beta triage consumes most of the team's day."
+        }
+      ]
+    }
+  ],
+  "answers": [
+    {
+      "case_id": "toy-001",
+      "true_ranking": ["alpha_automation", "beta_triage", "gamma_reporting", "delta_decoy"],
+      "high_value_categories": ["alpha_automation", "beta_triage"],
+      "decoy_categories": ["delta_decoy"],
+      "insufficient_evidence_categories": ["epsilon_unsized"],
+      "value_bands": {
+        "alpha_automation": {"low_usd": 90000, "high_usd": 110000},
+        "beta_triage": {"low_usd": 40000, "high_usd": 60000}
+      },
+      "required_policy_keywords": ["approval"],
+      "prohibited_action_keywords": ["send to the customer automatically"],
+      "notes": "Alpha is genuinely the largest win."
+    },
+    {
+      "case_id": "toy-002",
+      "true_ranking": ["beta_triage", "alpha_automation"],
+      "high_value_categories": ["beta_triage"],
+      "notes": "Volume shift makes beta the top opportunity."
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 from typing import Annotated
 
@@ -9,6 +10,8 @@ from rich.console import Console
 from rich.table import Table
 
 from myai.baseline import baseline_input_hash, build_baseline_request, run_baseline_result
+from myai.benchmark import FilesystemPackLoader, default_pack_path
+from myai.benchmark.loader import PACK_ENV_VAR
 from myai.fixtures import CompanyFixture, northstar_fixture
 from myai.providers.anthropic import AnthropicStructuredModel
 from myai.run_store import save_baseline_run
@@ -21,6 +24,11 @@ RootOption = Annotated[Path | None, typer.Option(exists=True, file_okay=False)]
 EnvironmentArgument = Annotated[str, typer.Argument()]
 ModelOption = Annotated[str, typer.Option(help="Anthropic model ID")]
 RunsOption = Annotated[int, typer.Option(help="Number of paid baseline calls to execute")]
+PackOption = Annotated[Path | None, typer.Option(help="Benchmark pack directory or file")]
+AllowTrackedOption = Annotated[
+    bool,
+    typer.Option(help="Permit a Git-tracked pack. Only valid for the public toy/example pack."),
+]
 
 
 def _northstar(environment: str, repo_root: Path) -> CompanyFixture:
@@ -146,6 +154,67 @@ def baseline(
         else:
             console.print("Evidence citations: all IDs exist in the observable fixture")
         console.print(f"Artifacts: {run_dir}")
+
+
+def _is_tracked_by_git(path: Path) -> bool:
+    """True when Git tracks this file, which would make a private pack public."""
+    try:
+        completed = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", str(path)],
+            capture_output=True,
+            cwd=path.parent,
+            check=False,
+        )
+    except OSError:
+        return False
+    return completed.returncode == 0
+
+
+@app.command("benchmark-validate")
+def benchmark_validate(
+    pack: PackOption = None,
+    root: RootOption = None,
+    allow_tracked: AllowTrackedOption = False,
+) -> None:
+    """Validate a benchmark pack and summarize it without revealing any answers."""
+    repo_root = root or Path.cwd()
+    pack_path = pack or default_pack_path(repo_root)
+    loader = FilesystemPackLoader(pack_path)
+
+    try:
+        loaded = loader.load()
+    except FileNotFoundError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
+    except ValueError as exc:
+        console.print(f"[red]Benchmark pack is invalid:[/red]\n{exc}")
+        raise typer.Exit(code=1) from exc
+
+    if not allow_tracked and _is_tracked_by_git(loader.pack_file):
+        console.print(
+            f"[red]SECURITY: {loader.pack_file} is tracked by Git. "
+            "Hidden benchmark answers must never be committed to a public repository. "
+            f"Move the pack into benchmarks/private/ or point {PACK_ENV_VAR} elsewhere. "
+            "Pass --allow-tracked only for the public toy/example pack.[/red]"
+        )
+        raise typer.Exit(code=3)
+
+    console.print(f"[bold]Pack {loaded.pack_version}[/bold]")
+    console.print(f"Source: {loader.pack_file}")
+    console.print(f"Pack hash: {loaded.pack_hash}")
+    console.print(f"Categories: {len(loaded.category_rules)}")
+
+    table = Table(title="Observable benchmark cases (answers withheld)")
+    table.add_column("Case")
+    table.add_column("Variant")
+    table.add_column("Evidence", justify="right")
+    for case in loaded.observable_cases():
+        table.add_row(case.case_id, case.variant_id, str(len(case.evidence)))
+    console.print(table)
+    console.print(
+        f"[green]Pack is complete and internally consistent: "
+        f"{len(loaded.cases)} cases[/green]"
+    )
 
 
 if __name__ == "__main__":

@@ -9,8 +9,10 @@ The POC tests whether a structured system can understand how a company works, id
 - M0 foundation: **complete**.
 - M1 Anthropic baseline runner: **complete**.
 - First successful Sonnet 5 end-to-end smoke run: **complete**.
+- M1.5 public benchmark/evaluator framework: **complete**.
+- Private Northstar answer key: **not authored yet**.
 - Official trusted baseline: **not frozen yet**.
-- Immediate next step: **build and freeze the private benchmark/evaluator and randomized Northstar cases before collecting more official model outputs or building the Company Model.**
+- Immediate next step: **author and freeze the private benchmark pack and its randomized Northstar cases before collecting more official model outputs or building the Company Model.**
 
 ### New LLM / coding-agent session
 
@@ -80,6 +82,18 @@ Each successful call creates a local git-ignored directory under `runs/` contain
 The first successful smoke run is documented in [`docs/experiments/2026-09-17-sonnet-baseline-smoke.md`](docs/experiments/2026-09-17-sonnet-baseline-smoke.md).
 
 **Do not treat that Sonnet result as the frozen benchmark and do not run a large Opus/Fable batch yet.** The benchmark/evaluator must be defined and frozen first so the target is not influenced by model outputs.
+
+## Benchmark framework
+
+`src/myai/benchmark/` scores a model's ranked opportunities against hidden truth: top-1 correctness, top-3 recall, rank correlation, decoy promotion, evidence-citation validity, unsupported ROI, ROI calibration, policy detection, critical policy violations, and confidence calibration. Scoring is fully deterministic — no LLM judge — so a stored run rescores identically in the future.
+
+Hidden answers are never committed. A benchmark pack lives in the git-ignored `benchmarks/private/`, or wherever `MYAI_BENCHMARK_PACK` points. Validate one without revealing its contents:
+
+```bash
+myai benchmark-validate
+```
+
+The command prints the pack version, hash, and observable case summary, and exits non-zero if the pack is tracked by Git. Format and a worked example are in [`benchmarks/README.md`](benchmarks/README.md#authoring-a-private-pack); the design rationale is in [`docs/adr/0002-benchmark-evaluator-framework.md`](docs/adr/0002-benchmark-evaluator-framework.md).
 
 ## Documentation
 

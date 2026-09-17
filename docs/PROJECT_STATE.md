@@ -1,6 +1,6 @@
 # myAI Project State and Continuation Handoff
 
-**Last updated:** 2026-09-17  
+**Last updated:** 2026-09-17 (M1.5 benchmark framework)  
 **Purpose:** This is the canonical handoff for a new human, coding agent, or LLM session. It records why the project exists, what research has already been done, what has been built, what experiments have run, what conclusions are and are not justified, and the exact next implementation sequence.
 
 ---
@@ -169,9 +169,25 @@ ANTHROPIC_WORKSPACE_ID=wrkspc_...
 
 and injects `anthropic-workspace-id` only when configured. Workspace-scoped keys continue to work without it.
 
+#### M1.5 — Public benchmark/evaluator framework
+Implemented 2026-09-17 (see §12 Step 2).
+
+Implemented:
+
+- `BenchmarkCase` / `CaseAnswerKey` as **separate types**, so observable input and hidden truth cannot be serialized together into a prompt.
+- `BenchmarkPack` with completeness validation (every case has exactly one answer; every referenced category exists) and a SHA-256 `pack_hash` for freezing.
+- deterministic keyword-based opportunity classification (no LLM judge — see ADR 0002).
+- the full v0.1 scorecard: top-1, top-3 recall, Spearman rank correlation, decoy promotion, evidence-citation validity, unsupported ROI, ROI band coverage/calibration, policy detection, critical policy violations, confidence Brier score.
+- `BenchmarkPackLoader` contract plus a filesystem loader reading `benchmarks/private/` or `MYAI_BENCHMARK_PACK`.
+- report aggregation with pack version/hash stamping and top-1 stability across repeated runs.
+- `myai benchmark-validate`, which summarizes a pack **without printing answers** and exits non-zero if the pack is tracked by Git.
+- a committed toy pack under `tests/data/toy_pack/` and 38 deterministic tests. No real answers committed.
+
+Also fixed: `tests/conftest.py` now isolates tests from the developer's local `.env`. Previously `Settings()` silently read the real `.env`, so `test_workspace_id_is_optional_for_scoped_keys` passed in credential-free CI and failed on a configured machine.
+
 ### CI state
 
-After the M1 implementation and the workspace fix, Ruff, Mypy, and Pytest pass in GitHub Actions. CI does not require Anthropic credentials and does not make paid model calls.
+After the M1 implementation and the workspace fix, Ruff, Mypy, and Pytest pass in GitHub Actions. CI does not require Anthropic credentials and does not make paid model calls. The M1.5 benchmark tests are likewise deterministic and credential-free.
 
 ---
 
@@ -188,8 +204,14 @@ Core files:
 - `src/myai/settings.py` — local `.env` configuration for Anthropic key/workspace.
 - `src/myai/fixtures.py` — fixture loading.
 - `src/myai/cli.py` — `inspect`, `dump-context`, and paid `baseline` commands.
+- `src/myai/benchmark/schema.py` — benchmark case/answer/pack types and pack hashing.
+- `src/myai/benchmark/categories.py` — deterministic prose-to-category matching.
+- `src/myai/benchmark/scoring.py` — `CaseScore` and all v0.1 metric functions.
+- `src/myai/benchmark/loader.py` — private-pack loader contract and filesystem loader.
+- `src/myai/benchmark/report.py` — `CaseRun`, `BenchmarkReport`, aggregation, stability.
 - `environments/northstar/` — public observable Northstar company/evidence fixture.
-- `benchmarks/README.md` — rules for keeping real benchmark truth out of the public/runtime-visible repo.
+- `tests/data/toy_pack/` — public toy pack with fake answers, used only by tests.
+- `benchmarks/README.md` — rules for keeping real benchmark truth out of the public/runtime-visible repo, plus the pack-authoring format.
 
 Do not introduce a graph database just because the future concept is called a “Company Graph.” The first Company Model should remain a logical typed representation unless benchmark/scale evidence creates a real storage need.
 
@@ -364,6 +386,8 @@ This is the most important continuation instruction.
 
 **Do not implement the Company Model/opportunity engine next. Do not collect a large set of Opus/Fable outputs next. Build the benchmark/evaluator first.**
 
+Status: the public framework in §11.1 is **implemented** (§5, M1.5). The private pack in §11.2 and the randomized cases in §11.3 are **not yet authored**, and that is the current step.
+
 The reason is experimental contamination: if we look at many frontier-model answers before defining the expected outcomes, it becomes easy to unconsciously shape the evaluator around what the models already said.
 
 ### 11.1 Public benchmark code to implement
@@ -468,22 +492,27 @@ grep -q '^ANTHROPIC_API_KEY=.\+' .env && echo "Anthropic key is configured"
 
 If the key is multi-workspace scoped, also verify `ANTHROPIC_WORKSPACE_ID` is present.
 
-### Step 2 — Implement M1.5 public benchmark framework
+### Step 2 — Implement M1.5 public benchmark framework — **DONE (2026-09-17)**
 
-Recommended first code slice:
+Delivered: typed case/answer/pack schemas, private-pack loader contract, rank/evidence/policy/ROI scoring, report aggregation, deterministic tests on a toy pack, and no real hidden answers committed. See §5 (M1.5) and [`adr/0002-benchmark-evaluator-framework.md`](adr/0002-benchmark-evaluator-framework.md).
 
-- typed benchmark-case/evaluator/result schemas;
-- external/private ground-truth loader contract;
-- rank/evidence/policy/ROI scoring functions;
-- deterministic unit tests using toy public answer data;
-- benchmark report aggregation;
-- no real Northstar hidden answers committed.
+**Known seam for the next session.** `build_baseline_request()` takes a `CompanyFixture` (a directory of `company.json` + `evidence.json`), while a `BenchmarkCase` carries company and evidence inline. Nothing yet runs a benchmark case through a model. Step 5 needs a small bridge — either a `CompanyFixture`-compatible view over a `BenchmarkCase`, or a `build_baseline_request` overload taking company+evidence directly. Prefer the latter; it keeps the prompt builder honest about what it actually consumes. **Do not change the baseline prompt text while doing this** — the prompt version is part of the frozen control, and `baseline_input_hash` must keep matching the recorded smoke run for the unchanged Northstar input.
 
-### Step 3 — Author and freeze private Northstar benchmark pack
+### Step 3 — Author and freeze private Northstar benchmark pack — **CURRENT STEP**
 
 Create the real holdout cases locally/private. Decide the hidden outcome/value/policy truth **before** running large frontier-model batches.
 
-Record a benchmark-pack version/hash so future system changes are measured against the same target.
+The format and a worked example are in [`../benchmarks/README.md`](../benchmarks/README.md#authoring-a-private-pack). Write `benchmarks/private/pack.json` (git-ignored), then:
+
+```bash
+myai benchmark-validate
+```
+
+This validates completeness, prints the `pack_hash`, and refuses to run if the pack is tracked by Git. Record that hash — it is the frozen target every later report is stamped against.
+
+Author roughly 20 **distinct** variants covering the case types listed in §11.3: quote-dominant, triage-dominant, finance-as-smaller-win, attractive decoy, unsizeable opportunity, policy-unsafe intervention, contradictory evidence, and volume shifts that change the correct ranking. Write the `notes` field on each answer explaining *why* the hidden ranking is true; a future session cannot re-derive that reasoning from the numbers alone.
+
+One practical warning: the observable evidence for each variant has to be authored too, not just the answers. A variant where triage is genuinely highest-value needs evidence that actually supports that conclusion, or the benchmark measures guessing rather than reasoning.
 
 ### Step 4 — Harden/freeze baseline configuration
 
@@ -623,8 +652,9 @@ Current status is:
 - **M0 engineering foundation:** complete.
 - **M1 live baseline plumbing:** complete.
 - **First Sonnet smoke experiment:** complete and technically successful.
+- **M1.5 public benchmark/evaluator framework:** complete.
+- **Private Northstar answer key:** **not yet authored** — current step.
 - **Official trusted baseline:** **not yet established**.
-- **Private evaluator/answer key:** **not yet built**.
 - **Company Model / structured opportunity engine:** not yet built.
 - **Intervention sandbox:** not yet built.
 - **Evidence that myAI beats frontier one-shot reasoning:** **none yet**.
@@ -649,6 +679,8 @@ A new session should read:
 10. `src/myai/providers/anthropic.py`;
 11. `src/myai/run_store.py`;
 12. `src/myai/cli.py`;
-13. Northstar fixture JSON.
+13. Northstar fixture JSON;
+14. `docs/adr/0002-benchmark-evaluator-framework.md`;
+15. `src/myai/benchmark/schema.py` and `src/myai/benchmark/scoring.py`.
 
-After that, the correct default action is **implement the public benchmark/evaluator framework and define the private benchmark pack**, not more generic research, UI work, or agent orchestration.
+After that, the correct default action is **author and freeze the private Northstar benchmark pack** (§12 Step 3), not more generic research, UI work, or agent orchestration. The public framework that consumes the pack already exists.

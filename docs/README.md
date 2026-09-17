@@ -10,11 +10,12 @@ This directory keeps the product thesis, market research, experiment history, ar
 - [`experiments/2026-09-17-sonnet-baseline-smoke.md`](./experiments/2026-09-17-sonnet-baseline-smoke.md) — first successful live baseline smoke test and its correct interpretation.
 - [`../POC_CHARTER.md`](../POC_CHARTER.md) — governing experimental charter and kill criteria.
 - [`../benchmarks/README.md`](../benchmarks/README.md) — benchmark integrity, private answer-key boundary, and current evaluator plan.
+- [`adr/0002-benchmark-evaluator-framework.md`](./adr/0002-benchmark-evaluator-framework.md) — why the evaluator is deterministic, why observable and hidden case data are separate types, and how packs are frozen.
 - [`adr/`](./adr/) — architectural decision records.
 
 ## Current milestone
 
-M0 foundation and the M1 live Anthropic baseline runner are implemented. One Sonnet 5 smoke run has succeeded. The next milestone is to **freeze the evaluator/private Northstar benchmark and randomized cases before collecting official Opus/Fable baseline batches or implementing the structured Company Model/opportunity engine**.
+M0 foundation, the M1 live Anthropic baseline runner, and the M1.5 public benchmark/evaluator framework are implemented. One Sonnet 5 smoke run has succeeded. No private answer key exists yet, so no benchmark result exists yet. The next milestone is to **author and freeze the private Northstar benchmark pack and its randomized cases before collecting official Opus/Fable baseline batches or implementing the structured Company Model/opportunity engine**.
 
 ## Documentation rule
 

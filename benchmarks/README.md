@@ -38,9 +38,11 @@ The first real benchmark pack must be created and frozen **before** implementing
 
 The live baseline harness is working end to end. One Sonnet 5 smoke run succeeded and is documented in `docs/experiments/2026-09-17-sonnet-baseline-smoke.md`.
 
-That smoke run is **not** the trusted/frozen baseline because no private evaluator exists yet.
+That smoke run is **not** the trusted/frozen baseline.
 
-The immediate next milestone is therefore the benchmark/evaluator freeze.
+The **public benchmark framework is implemented** (M1.5): `src/myai/benchmark/` contains the case/answer schemas, the deterministic scorer, the private-pack loader contract, and report aggregation. Design rationale is in [`../docs/adr/0002-benchmark-evaluator-framework.md`](../docs/adr/0002-benchmark-evaluator-framework.md).
+
+**No private Northstar pack has been authored yet.** That is the next step, and it must be finished before any official Opus/Fable batch.
 
 ## Recommended first benchmark design
 
@@ -60,28 +62,71 @@ Useful case variations should include:
 
 The runtime/baseline sees only the observable variant. The private evaluator sees the hidden generation parameters and answer truth.
 
-## Suggested private case fields
+## Authoring a private pack
 
-The exact schema is still to be implemented, but a private benchmark case should be able to represent:
+A pack is a single `pack.json` file. Put it at `benchmarks/private/pack.json` (git-ignored), or anywhere outside the repo and point `MYAI_BENCHMARK_PACK` at it.
 
-- `case_id`
-- `fixture_variant_id`
-- hidden opportunity classes
-- expected top opportunity / acceptable rank bands
-- hidden annual-value ranges
-- hidden labor/cycle-time inputs
-- known decoys
-- critical policies/constraints
-- prohibited autonomous actions
-- acceptable intervention classes
-- ambiguity / “insufficient evidence” expectations
-- hidden seed/generator metadata
+```json
+{
+  "pack_version": "northstar-v1",
+  "category_rules": [
+    {
+      "category_id": "quote_automation",
+      "label": "Sales quote preparation",
+      "keywords": ["quote", "quoting", "proposal"]
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "ns-001",
+      "variant_id": "ns-quote-dominant",
+      "company": { "name": "Northstar Industrial Services", "employee_count": 82 },
+      "evidence": [ { "id": "...", "kind": "observation", "source": "...", "content": "..." } ]
+    }
+  ],
+  "answers": [
+    {
+      "case_id": "ns-001",
+      "true_ranking": ["quote_automation", "support_triage", "finance_reporting"],
+      "high_value_categories": ["quote_automation", "support_triage"],
+      "decoy_categories": ["policy_assistant"],
+      "insufficient_evidence_categories": ["policy_assistant"],
+      "value_bands": { "quote_automation": { "low_usd": 60000, "high_usd": 110000 } },
+      "required_policy_keywords": ["approval"],
+      "prohibited_action_keywords": ["send the quote to the customer automatically"],
+      "notes": "Why this ranking is true, for the human who authored it."
+    }
+  ]
+}
+```
 
-The public evaluator should consume an opaque/private pack through an interface; it should not require the answers to be committed alongside code.
+`cases[]` is the observable half — exactly what a model sees. `answers[]` is the hidden half and must never reach model context. The two are separate types in `src/myai/benchmark/schema.py` precisely so a prompt builder cannot serialize an answer by accident.
+
+Notes on individual fields:
+
+- `category_rules` is the taxonomy. Free-text model prose is mapped to a `category_id` by deterministic keyword match, so keywords should be distinctive across categories. Ties break on the smallest category ID.
+- `true_ranking` is descending true value and defines top-1 correctness and rank correlation.
+- `insufficient_evidence_categories` marks opportunities the evidence cannot responsibly size. Asserting a dollar figure for one of these counts against the model.
+- `prohibited_action_keywords` describe autonomous actions the policy forbids. Proposing one without an approval step is a critical policy violation.
+
+Validate a pack without printing any of its answers:
+
+```bash
+myai benchmark-validate
+myai benchmark-validate --pack /path/to/pack
+```
+
+The command refuses to run (exit code 3) if the pack file is tracked by Git. A hidden answer key committed to a public repository is not hidden.
+
+### Freezing
+
+Record the `pack_hash` reported by `benchmark-validate` before running official baselines. Every report carries the pack version and hash, so a result can always be traced to the exact target it was measured against. Changing a pack changes its hash and invalidates comparison with earlier reports.
 
 ## Initial scorecard
 
-At minimum, benchmark reports should include:
+Implemented in `src/myai/benchmark/scoring.py` (`CaseScore`) and `src/myai/benchmark/report.py` (`BenchmarkReport`). Metrics return `None` rather than `0` when a case carries no expectation for them, so an untested dimension is never reported as a passing score.
+
+Benchmark reports include:
 
 - top-1 opportunity correctness;
 - top-3 recall of true high-value opportunities;
