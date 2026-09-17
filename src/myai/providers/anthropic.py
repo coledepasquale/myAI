@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from time import perf_counter
-from typing import cast
 
 from anthropic import Anthropic
 from pydantic import BaseModel
@@ -45,7 +44,7 @@ class AnthropicStructuredModel:
         )
         latency_ms = round((perf_counter() - started) * 1000)
 
-        parsed = cast(T | None, response.parsed_output)
+        parsed = response.parsed_output
         if parsed is None:
             raise RuntimeError("Anthropic returned no parsed structured output")
 
