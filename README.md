@@ -13,7 +13,6 @@ Requirements: Git, Python 3.12+, and an Anthropic API key for live baseline expe
 ```bash
 git clone https://github.com/coledepasquale/myAI.git
 cd myAI
-git switch foundation-v0.1
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -29,7 +28,7 @@ ANTHROPIC_API_KEY=your_key_here
 
 `.env` is git-ignored. Never commit API keys.
 
-Verify the current foundation:
+Verify the foundation:
 
 ```bash
 myai inspect northstar
@@ -37,5 +36,23 @@ ruff check .
 mypy
 pytest
 ```
+
+## Run the one-shot baseline
+
+The baseline gives one frontier model exactly the observable Northstar context and asks it to rank evidence-backed modernization opportunities. No Company Graph, multi-agent loop, hidden answer key, or intervention builder is involved.
+
+Start with one paid Sonnet call:
+
+```bash
+myai baseline northstar --model claude-sonnet-5 --runs 1
+```
+
+Each call writes an immutable local artifact directory under `runs/` containing:
+
+- `request.json` — exact model request and prompt version
+- `output.json` — validated structured opportunities
+- `run.json` — model, input hash, tokens, latency, estimated cost, and citation-quality metadata
+
+`runs/` is git-ignored. Inspect the first run before executing batches. When the harness is validated, use repeated Sonnet runs for development and Claude Opus 5 for the frozen strong-control benchmark.
 
 See `POC_CHARTER.md` for the experiment design and `docs/` for founder/market context.
