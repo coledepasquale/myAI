@@ -9,6 +9,7 @@ description = "Experimental evidence-grounded AI modernization platform"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+  "anthropic>=1,<2",
   "pydantic>=2.9,<3",
   "pydantic-settings>=2.6,<3",
   "typer>=0.12,<1",
