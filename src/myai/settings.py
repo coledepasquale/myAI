@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     anthropic_api_key: SecretStr | None = None
+    anthropic_workspace_id: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -24,3 +25,9 @@ class Settings(BaseSettings):
                 "ANTHROPIC_API_KEY is empty. Put the key in the local .env file."
             )
         return value
+
+    def optional_anthropic_workspace_id(self) -> str | None:
+        if self.anthropic_workspace_id is None:
+            return None
+        value = self.anthropic_workspace_id.strip()
+        return value or None
