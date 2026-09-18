@@ -670,7 +670,7 @@ Current status is:
 - **Private Northstar answer key:** authored and frozen 2026-09-18 (`northstar-v1`, `a4174c2c…`).
 - **Benchmark runner:** implemented and exercised (disk-full-resilient, offline rescore verified).
 - **Official trusted baseline:** **established 2026-09-18** — Sonnet/Opus/Fable, 20 cases each, frozen report in `experiments/2026-09-18-official-baseline-report.md`. Opus one-shot near-ceiling on discovery; value calibration is the only open axis.
-- **Baseline-v0.2 hardened-prompt control:** not yet run — required before Step 6.
+- **Baseline-v0.2 hardened-prompt control:** implemented (`baseline-v0.2` in `src/myai/baseline.py`, run via `myai benchmark-run --prompt-version baseline-v0.2`); v0.1 frozen by a hash-pinned test. **Not yet executed** — required before Step 6.
 - **Company Model / structured opportunity engine:** not yet built.
 - **Intervention sandbox:** not yet built.
 - **Evidence that myAI beats frontier one-shot reasoning:** **none yet**.

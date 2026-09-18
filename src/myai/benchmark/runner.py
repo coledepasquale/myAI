@@ -44,6 +44,7 @@ class SuiteRecord(BaseModel):
     pack_hash: str
     scorer_version: str = SCORER_VERSION
     effort: str = "high"
+    prompt_version: str = "baseline-v0.1"
     artifact_write_errors: list[str] = Field(default_factory=list)
     started_at: datetime
     repeat: int = Field(ge=1)
@@ -92,19 +93,20 @@ def rescore_run_dir(run_dir: Path, pack: BenchmarkPack) -> BenchmarkReport:
         output = BaselineOutput.model_validate_json(output_file.read_text())
         request_file = run_dir / output_file.name.replace(".output.", ".request.")
         input_hash = ""
+        prompt_version = record.prompt_version
         if request_file.is_file():
             from myai.model_gateway import ModelRequest
 
-            input_hash = request_input_hash(
-                ModelRequest.model_validate_json(request_file.read_text())
-            )
+            stored_request = ModelRequest.model_validate_json(request_file.read_text())
+            input_hash = request_input_hash(stored_request)
+            prompt_version = stored_request.prompt_version
         score = score_case(case, pack.answer(case_id), pack.category_rules, output)
         predicted = predicted_category_order(output.opportunities, pack.category_rules)
         runs.append(
             CaseRun(
                 score=score,
                 model=record.model,
-                prompt_version="baseline-v0.1",
+                prompt_version=prompt_version,
                 input_hash=input_hash,
                 predicted_top1=predicted[0] if predicted else None,
             )
@@ -123,6 +125,7 @@ def run_benchmark_suite(
     limit: int | None = None,
     repeat: int = 1,
     effort: str = "high",
+    prompt_version: str = "baseline-v0.1",
     on_case: ProgressFn | None = None,
 ) -> SuiteResult:
     """Execute ``repeat`` runs of each (limited) pack case and score them.
@@ -140,7 +143,9 @@ def run_benchmark_suite(
     outcomes: list[CaseOutcome] = []
     write_errors: list[str] = []
     for case in cases:
-        request = build_context_request(case.company, case.evidence, model, effort=effort)
+        request = build_context_request(
+            case.company, case.evidence, model, effort=effort, prompt_version=prompt_version
+        )
         input_hash = request_input_hash(request)
         for attempt in range(1, repeat + 1):
             label = case.case_id if repeat == 1 else f"{case.case_id}#{attempt}"
@@ -193,6 +198,7 @@ def run_benchmark_suite(
         started_at=started,
         repeat=repeat,
         effort=effort,
+        prompt_version=prompt_version,
         artifact_write_errors=write_errors,
         case_count=len(cases),
         succeeded=len(succeeded),

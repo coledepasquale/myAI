@@ -26,6 +26,39 @@ def test_anthropic_cost_estimate_uses_versioned_rates() -> None:
     assert estimate_cost_usd("unknown-model", 1_000, 1_000) is None
 
 
+def test_v01_prompt_is_frozen_by_hash() -> None:
+    # The v0.1 control is frozen: this hash matches the recorded 2026-09-17 smoke
+    # run and the official 2026-09-18 baseline suites. If this test fails, the
+    # prompt or fixture changed and comparisons with recorded runs are void.
+    fixture = northstar_fixture(Path.cwd())
+    assert (
+        baseline_input_hash(fixture, "claude-sonnet-5")
+        == "89f65eef7ed153c4e67ae4aab0abba6c2333ada499d0cfdba584a93f62d67a28"
+    )
+
+
+def test_v02_is_a_distinct_tracked_prompt_version() -> None:
+    from myai.baseline import build_context_request
+
+    fixture = northstar_fixture(Path.cwd())
+    v01 = build_context_request(fixture.company(), fixture.evidence(), "claude-opus-5")
+    v02 = build_context_request(
+        fixture.company(), fixture.evidence(), "claude-opus-5",
+        prompt_version="baseline-v0.2",
+    )
+
+    assert v02.prompt_version == "baseline-v0.2"
+    assert v02.system.startswith(v01.system)  # v0.2 only appends; the core is shared
+    assert "annual_value_usd" in v02.system and "null" in v02.system
+    assert v02.user == v01.user  # observable context identical across versions
+
+    with pytest.raises(ValueError, match="unknown prompt version"):
+        build_context_request(
+            fixture.company(), fixture.evidence(), "claude-opus-5",
+            prompt_version="baseline-v9",
+        )
+
+
 def test_requests_record_explicit_effort() -> None:
     fixture = northstar_fixture(Path.cwd())
     default = build_baseline_request(fixture, "claude-sonnet-5")

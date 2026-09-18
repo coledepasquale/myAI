@@ -264,6 +264,13 @@ def benchmark_run(
     effort: Annotated[
         str, typer.Option(help="Reasoning effort: low|medium|high|xhigh|max (recorded per run)")
     ] = "high",
+    prompt_version: Annotated[
+        str,
+        typer.Option(
+            help="Baseline prompt version (baseline-v0.1 frozen control, "
+            "baseline-v0.2 value-discipline variant)"
+        ),
+    ] = "baseline-v0.1",
     show_scores: Annotated[
         bool,
         typer.Option(
@@ -304,9 +311,9 @@ def benchmark_run(
 
     total = limit if limit is not None else len(loaded.cases)
     console.print(
-        f"[bold]Benchmark suite[/bold] — {model} @ effort={effort} | pack "
-        f"{loaded.pack_version} ({loaded.pack_hash[:16]}…) | {total} cases x {repeat} "
-        "run(s), paid"
+        f"[bold]Benchmark suite[/bold] — {model} @ effort={effort}, {prompt_version} | "
+        f"pack {loaded.pack_version} ({loaded.pack_hash[:16]}…) | {total} cases x "
+        f"{repeat} run(s), paid"
     )
 
     def show(outcome: CaseOutcome) -> None:
@@ -329,10 +336,15 @@ def benchmark_run(
                 f"{outcome.run.output_tokens or 0:,} out-tokens, {cost})"
             )
 
-    result = run_benchmark_suite(
-        loaded, gateway, model,
-        repo_root=repo_root, limit=limit, repeat=repeat, effort=effort, on_case=show,
-    )
+    try:
+        result = run_benchmark_suite(
+            loaded, gateway, model,
+            repo_root=repo_root, limit=limit, repeat=repeat, effort=effort,
+            prompt_version=prompt_version, on_case=show,
+        )
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
 
     _print_report(result.report, attempted=result.record.case_count)
 

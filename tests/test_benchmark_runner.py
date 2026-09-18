@@ -115,6 +115,19 @@ def test_limit_and_repeat_control_paid_call_volume(pack: BenchmarkPack) -> None:
     assert result.report.top1_stability == pytest.approx(1.0)
 
 
+def test_prompt_version_flows_into_requests_and_record(pack: BenchmarkPack) -> None:
+    gateway = FakeGateway()
+    result = run_benchmark_suite(
+        pack, gateway, "fake-model", prompt_version="baseline-v0.2"
+    )
+
+    assert result.record.prompt_version == "baseline-v0.2"
+    assert all(req.prompt_version == "baseline-v0.2" for req in gateway.requests)
+    assert all("Value discipline" in req.system for req in gateway.requests)
+    assert all(run.prompt_version == "baseline-v0.2" for run in
+               (o.run for o in result.outcomes) if run is not None)
+
+
 def test_rescore_reproduces_stored_run_and_guards_pack_identity(
     pack: BenchmarkPack, tmp_path: Path
 ) -> None:
