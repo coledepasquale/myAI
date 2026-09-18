@@ -260,6 +260,9 @@ def benchmark_run(
     repeat: Annotated[
         int, typer.Option(min=1, max=5, help="Paid runs per case (for stability measurement)")
     ] = 1,
+    effort: Annotated[
+        str, typer.Option(help="Reasoning effort: low|medium|high|xhigh|max (recorded per run)")
+    ] = "high",
     root: RootOption = None,
 ) -> None:
     """Run one model over every benchmark case, score against the private pack."""
@@ -292,8 +295,9 @@ def benchmark_run(
 
     total = limit if limit is not None else len(loaded.cases)
     console.print(
-        f"[bold]Benchmark suite[/bold] — {model} | pack {loaded.pack_version} "
-        f"({loaded.pack_hash[:16]}…) | {total} cases x {repeat} run(s), paid"
+        f"[bold]Benchmark suite[/bold] — {model} @ effort={effort} | pack "
+        f"{loaded.pack_version} ({loaded.pack_hash[:16]}…) | {total} cases x {repeat} "
+        "run(s), paid"
     )
 
     def show(outcome: CaseOutcome) -> None:
@@ -311,7 +315,7 @@ def benchmark_run(
 
     result = run_benchmark_suite(
         loaded, gateway, model,
-        repo_root=repo_root, limit=limit, repeat=repeat, on_case=show,
+        repo_root=repo_root, limit=limit, repeat=repeat, effort=effort, on_case=show,
     )
 
     report = result.report

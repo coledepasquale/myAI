@@ -11,6 +11,10 @@ class ModelRequest(BaseModel):
     model: str
     prompt_version: str
     max_output_tokens: int = Field(default=8192, ge=1)
+    # Explicit reasoning configuration so official runs are reproducible months
+    # later instead of riding an implicit provider default. "high" matches the
+    # documented API default (verified 2026-09-18) but is now recorded per run.
+    effort: str = Field(default="high", pattern="^(low|medium|high|xhigh|max)$")
 
 
 class ModelResult[T: BaseModel](BaseModel):

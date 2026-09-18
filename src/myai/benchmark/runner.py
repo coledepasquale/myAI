@@ -43,6 +43,7 @@ class SuiteRecord(BaseModel):
     pack_version: str
     pack_hash: str
     scorer_version: str = SCORER_VERSION
+    effort: str = "high"
     started_at: datetime
     repeat: int = Field(ge=1)
     case_count: int = Field(ge=0)
@@ -68,6 +69,7 @@ def run_benchmark_suite(
     repo_root: Path | None = None,
     limit: int | None = None,
     repeat: int = 1,
+    effort: str = "high",
     on_case: ProgressFn | None = None,
 ) -> SuiteResult:
     """Execute ``repeat`` runs of each (limited) pack case and score them.
@@ -84,7 +86,7 @@ def run_benchmark_suite(
     cases = pack.observable_cases()[: limit if limit is not None else len(pack.cases)]
     outcomes: list[CaseOutcome] = []
     for case in cases:
-        request = build_context_request(case.company, case.evidence, model)
+        request = build_context_request(case.company, case.evidence, model, effort=effort)
         input_hash = request_input_hash(request)
         for attempt in range(1, repeat + 1):
             label = case.case_id if repeat == 1 else f"{case.case_id}#{attempt}"
@@ -135,6 +137,7 @@ def run_benchmark_suite(
         pack_hash=pack.pack_hash,
         started_at=started,
         repeat=repeat,
+        effort=effort,
         case_count=len(cases),
         succeeded=len(succeeded),
         failed_case_ids=sorted({o.case_id for o in outcomes if not o.ok}),

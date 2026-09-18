@@ -518,9 +518,11 @@ Author roughly 20 **distinct** variants covering the case types listed in §11.3
 
 One practical warning: the observable evidence for each variant has to be authored too, not just the answers. A variant where triage is genuinely highest-value needs evidence that actually supports that conclusion, or the benchmark measures guessing rather than reasoning.
 
-### Step 4 — Harden/freeze baseline configuration — **partially done**
+### Step 4 — Harden/freeze baseline configuration — **DONE (2026-09-18)**
 
-The benchmark runner exists (`src/myai/benchmark/runner.py`, `myai benchmark-run`): it reuses the frozen baseline-v0.1 prompt via `build_context_request` (fixture input hash verified unchanged against the recorded smoke run, `89f65eef…`), persists immutable per-case artifacts under `runs/benchmark_*/`, scores against the private pack, excludes failed cases from reports loudly, and refuses to run when `--expect-hash` does not match the loaded pack. Reasoning/effort configuration is still implicit provider default — decide and record it before the official Opus/Fable batch (see original checklist below).
+The benchmark runner exists (`src/myai/benchmark/runner.py`, `myai benchmark-run`): it reuses the frozen baseline-v0.1 prompt via `build_context_request` (fixture input hash verified unchanged against the recorded smoke run, `89f65eef…`), persists immutable per-case artifacts under `runs/benchmark_*/`, scores against the private pack, excludes failed cases from reports loudly, and refuses to run when `--expect-hash` does not match the loaded pack.
+
+Reasoning configuration is now explicit: every request sends `thinking={"type": "adaptive"}` and `output_config={"effort": ...}` (default `high`, the documented API default — behaviorally identical to the smoke run's implicit default, but now recorded in `request.json` and the suite record). Model IDs were verified live against the Models API on 2026-09-18: `claude-sonnet-5`, `claude-opus-5`, and `claude-fable-5-1` all exist; Fable 5.1 pricing ($10/$50 per MTok, verified against the live models-overview doc) was added to the provider cost table. Sonnet 5 pricing ($2/$10) was re-verified as current.
 
 Before official runs:
 

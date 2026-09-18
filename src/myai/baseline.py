@@ -32,6 +32,7 @@ def build_context_request(
     company: dict[str, Any],
     evidence: list[Evidence],
     model: str,
+    effort: str = "high",
 ) -> ModelRequest:
     """Build the frozen baseline-v0.1 request from raw observable context.
 
@@ -50,6 +51,7 @@ def build_context_request(
         model=model,
         prompt_version="baseline-v0.1",
         max_output_tokens=8192,
+        effort=effort,
     )
 
 

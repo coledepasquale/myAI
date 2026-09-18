@@ -22,7 +22,20 @@ def test_baseline_input_hash_is_stable() -> None:
 def test_anthropic_cost_estimate_uses_versioned_rates() -> None:
     assert estimate_cost_usd("claude-sonnet-5", 1_000_000, 1_000_000) == pytest.approx(12.0)
     assert estimate_cost_usd("claude-opus-5", 1_000_000, 1_000_000) == pytest.approx(30.0)
+    assert estimate_cost_usd("claude-fable-5-1", 1_000_000, 1_000_000) == pytest.approx(60.0)
     assert estimate_cost_usd("unknown-model", 1_000, 1_000) is None
+
+
+def test_requests_record_explicit_effort() -> None:
+    fixture = northstar_fixture(Path.cwd())
+    default = build_baseline_request(fixture, "claude-sonnet-5")
+    assert default.effort == "high"  # matches the documented API default, now explicit
+
+    from myai.baseline import build_context_request
+
+    tuned = build_context_request(fixture.company(), fixture.evidence(), "claude-opus-5", "xhigh")
+    assert tuned.effort == "xhigh"
+    assert tuned.prompt_version == default.prompt_version
 
 
 def test_run_store_persists_request_output_and_citation_quality(tmp_path: Path) -> None:

@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 from time import perf_counter
+from typing import cast
 
 from anthropic import Anthropic
+from anthropic.types import OutputConfigParam
 from pydantic import BaseModel
 
 from myai.model_gateway import ModelRequest, ModelResult
 
-# Standard Claude API pricing captured 2026-09-17. Keep this table explicit so
-# historical run artifacts remain interpretable if provider pricing changes.
+# Standard Claude API pricing verified 2026-09-18 against the live models
+# overview doc. Keep this table explicit so historical run artifacts remain
+# interpretable if provider pricing changes.
 _PRICING_PER_MILLION_TOKENS: dict[str, tuple[float, float]] = {
     "claude-sonnet-5": (2.0, 10.0),
     "claude-opus-5": (5.0, 25.0),
+    "claude-fable-5-1": (10.0, 50.0),
 }
 
 
@@ -49,6 +53,11 @@ class AnthropicStructuredModel:
             system=request.system,
             messages=[{"role": "user", "content": request.user}],
             output_format=schema,
+            # Explicit rather than implicit: adaptive thinking is the documented
+            # mode on Sonnet 5 / Opus 5 / Fable 5.1, and effort is recorded in
+            # the request artifact so frozen runs stay reproducible.
+            thinking={"type": "adaptive"},
+            output_config=cast(OutputConfigParam, {"effort": request.effort}),
         )
         latency_ms = round((perf_counter() - started) * 1000)
 
