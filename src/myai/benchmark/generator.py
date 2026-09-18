@@ -110,13 +110,19 @@ PROHIBITED_QUOTE_ACTIONS: list[str] = [
 
 
 class LaborRates(BaseModel):
-    """Fully loaded cost per hour (wage + benefits + overhead), USD."""
+    """Fully loaded cost per hour, USD.
 
-    sales_rep: float = Field(default=44.0, gt=0)
-    support_agent: float = Field(default=29.0, gt=0)
+    Defaults derive from BLS May-2025 OEWS medians, loaded x1.43 (benefits are
+    ~30% of total compensation per BLS ECEC) and discounted ~10% for a small
+    regional firm (metro/nonmetro gap and firm-size wage effects). Quote prep is
+    treated as inside-sales-weighted work, not field-rep time.
+    """
+
+    sales_rep: float = Field(default=41.0, gt=0)
+    support_agent: float = Field(default=28.0, gt=0)
     finance_analyst: float = Field(default=52.0, gt=0)
-    employee: float = Field(default=36.0, gt=0)
-    manager: float = Field(default=62.0, gt=0)
+    employee: float = Field(default=34.0, gt=0)
+    manager: float = Field(default=66.0, gt=0)
 
 
 class GeneratorParams(BaseModel):

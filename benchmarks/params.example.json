@@ -13,13 +13,13 @@
   "band_width": 0.35,
   "_high_value_floor_usd": "Annual value below this does not count as a must-find opportunity.",
   "high_value_floor_usd": 12000,
-  "_labor_rates_usd_per_hour": "Fully loaded cost (wage x ~1.4 for benefits/overhead), USD/hour.",
+  "_labor_rates_usd_per_hour": "Fully loaded USD/hour: BLS May-2025 OEWS medians x1.43 benefits load (BLS ECEC: benefits ~30% of total comp), ~10% regional/small-firm discount.",
   "labor_rates_usd_per_hour": {
-    "sales_rep": 44.0,
-    "support_agent": 29.0,
+    "sales_rep": 41.0,
+    "support_agent": 28.0,
     "finance_analyst": 52.0,
-    "employee": 36.0,
-    "manager": 62.0
+    "employee": 34.0,
+    "manager": 66.0
   },
   "_automatable_fraction": "Share of the observed labor an AI intervention can realistically remove.",
   "automatable_fraction": {
