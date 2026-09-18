@@ -42,7 +42,7 @@ That smoke run is **not** the trusted/frozen baseline.
 
 The **public benchmark framework is implemented** (M1.5): `src/myai/benchmark/` contains the case/answer schemas, the deterministic scorer, the private-pack loader contract, and report aggregation. Design rationale is in [`../docs/adr/0002-benchmark-evaluator-framework.md`](../docs/adr/0002-benchmark-evaluator-framework.md).
 
-**No private Northstar pack has been authored yet.** That is the next step, and it must be finished before any official Opus/Fable batch.
+**The private Northstar pack is frozen** (2026-09-18): `northstar-v1`, hash `a4174c2c0d58783bf47abf329ae959ced89d343e5b39d1047529b261f013ad32`. Run the suite with `myai benchmark-run --expect-hash <hash>`; a report without this hash is not a result against the frozen target.
 
 ## Recommended first benchmark design
 

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-from myai.domain import Opportunity
+from myai.domain import Evidence, Opportunity
 from myai.fixtures import CompanyFixture
 from myai.model_gateway import ModelRequest, ModelResult, StructuredModel
 
@@ -27,10 +28,20 @@ def _stable_hash(payload: str) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def build_baseline_request(fixture: CompanyFixture, model: str) -> ModelRequest:
+def build_context_request(
+    company: dict[str, Any],
+    evidence: list[Evidence],
+    model: str,
+) -> ModelRequest:
+    """Build the frozen baseline-v0.1 request from raw observable context.
+
+    This is the only place observable context is serialized for a model, so it
+    is also the contamination boundary: it accepts company + evidence and
+    nothing else — a hidden answer key has no path into the prompt.
+    """
     context = {
-        "company": fixture.company(),
-        "evidence": [item.model_dump(mode="json") for item in fixture.evidence()],
+        "company": company,
+        "evidence": [item.model_dump(mode="json") for item in evidence],
     }
     user = json.dumps(context, indent=2, sort_keys=True)
     return ModelRequest(
@@ -40,6 +51,14 @@ def build_baseline_request(fixture: CompanyFixture, model: str) -> ModelRequest:
         prompt_version="baseline-v0.1",
         max_output_tokens=8192,
     )
+
+
+def build_baseline_request(fixture: CompanyFixture, model: str) -> ModelRequest:
+    return build_context_request(fixture.company(), fixture.evidence(), model)
+
+
+def request_input_hash(request: ModelRequest) -> str:
+    return _stable_hash(request.system + "\n" + request.user)
 
 
 def run_baseline_result(
@@ -60,5 +79,4 @@ def run_baseline(
 
 
 def baseline_input_hash(fixture: CompanyFixture, model: str) -> str:
-    request = build_baseline_request(fixture, model)
-    return _stable_hash(request.system + "\n" + request.user)
+    return request_input_hash(build_baseline_request(fixture, model))

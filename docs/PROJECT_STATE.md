@@ -498,7 +498,9 @@ Delivered: typed case/answer/pack schemas, private-pack loader contract, rank/ev
 
 **Known seam for the next session.** `build_baseline_request()` takes a `CompanyFixture` (a directory of `company.json` + `evidence.json`), while a `BenchmarkCase` carries company and evidence inline. Nothing yet runs a benchmark case through a model. Step 5 needs a small bridge — either a `CompanyFixture`-compatible view over a `BenchmarkCase`, or a `build_baseline_request` overload taking company+evidence directly. Prefer the latter; it keeps the prompt builder honest about what it actually consumes. **Do not change the baseline prompt text while doing this** — the prompt version is part of the frozen control, and `baseline_input_hash` must keep matching the recorded smoke run for the unchanged Northstar input.
 
-### Step 3 — Author and freeze private Northstar benchmark pack — **CURRENT STEP**
+### Step 3 — Author and freeze private Northstar benchmark pack — **DONE (2026-09-18)**
+
+**Frozen:** pack `northstar-v1`, hash `a4174c2c0d58783bf47abf329ae959ced89d343e5b39d1047529b261f013ad32` (see [`experiments/2026-09-18-benchmark-freeze.md`](experiments/2026-09-18-benchmark-freeze.md)). The founder authored the pack privately via `myai benchmark-generate`; only the version and hash were shared into the build session.
 
 Create the real holdout cases locally/private. Decide the hidden outcome/value/policy truth **before** running large frontier-model batches.
 
@@ -516,7 +518,9 @@ Author roughly 20 **distinct** variants covering the case types listed in §11.3
 
 One practical warning: the observable evidence for each variant has to be authored too, not just the answers. A variant where triage is genuinely highest-value needs evidence that actually supports that conclusion, or the benchmark measures guessing rather than reasoning.
 
-### Step 4 — Harden/freeze baseline configuration
+### Step 4 — Harden/freeze baseline configuration — **partially done**
+
+The benchmark runner exists (`src/myai/benchmark/runner.py`, `myai benchmark-run`): it reuses the frozen baseline-v0.1 prompt via `build_context_request` (fixture input hash verified unchanged against the recorded smoke run, `89f65eef…`), persists immutable per-case artifacts under `runs/benchmark_*/`, scores against the private pack, excludes failed cases from reports loudly, and refuses to run when `--expect-hash` does not match the loaded pack. Reasoning/effort configuration is still implicit provider default — decide and record it before the official Opus/Fable batch (see original checklist below).
 
 Before official runs:
 
@@ -655,8 +659,9 @@ Current status is:
 - **M1 live baseline plumbing:** complete.
 - **First Sonnet smoke experiment:** complete and technically successful.
 - **M1.5 public benchmark/evaluator framework:** complete.
-- **Private Northstar answer key:** **not yet authored** — current step.
-- **Official trusted baseline:** **not yet established**.
+- **Private Northstar answer key:** authored and frozen 2026-09-18 (`northstar-v1`, `a4174c2c…`).
+- **Benchmark runner:** implemented; official suite not yet executed.
+- **Official trusted baseline:** **not yet established** — next step.
 - **Company Model / structured opportunity engine:** not yet built.
 - **Intervention sandbox:** not yet built.
 - **Evidence that myAI beats frontier one-shot reasoning:** **none yet**.

@@ -13,6 +13,7 @@ from myai.baseline import baseline_input_hash, build_baseline_request, run_basel
 from myai.benchmark import FilesystemPackLoader, default_pack_path
 from myai.benchmark.generator import generate_pack, load_params
 from myai.benchmark.loader import PACK_ENV_VAR
+from myai.benchmark.runner import CaseOutcome, run_benchmark_suite
 from myai.fixtures import CompanyFixture, northstar_fixture
 from myai.providers.anthropic import AnthropicStructuredModel
 from myai.run_store import save_baseline_run
@@ -243,6 +244,114 @@ def benchmark_generate(
         "Next: spot-check a few cases in manifest.json, run [bold]myai "
         "benchmark-validate[/bold], and record the pack hash to freeze the target."
     )
+
+
+@app.command("benchmark-run")
+def benchmark_run(
+    model: ModelOption = "claude-sonnet-5",
+    pack: PackOption = None,
+    expect_hash: Annotated[
+        str | None,
+        typer.Option(help="Abort unless the loaded pack has exactly this hash"),
+    ] = None,
+    limit: Annotated[
+        int | None, typer.Option(help="Only run the first N cases (paid-call budget guard)")
+    ] = None,
+    repeat: Annotated[
+        int, typer.Option(min=1, max=5, help="Paid runs per case (for stability measurement)")
+    ] = 1,
+    root: RootOption = None,
+) -> None:
+    """Run one model over every benchmark case, score against the private pack."""
+    repo_root = root or Path.cwd()
+    pack_path = pack or default_pack_path(repo_root)
+    try:
+        loaded = FilesystemPackLoader(pack_path).load()
+    except (FileNotFoundError, ValueError) as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
+
+    if expect_hash is not None and loaded.pack_hash != expect_hash:
+        console.print(
+            f"[red]Pack hash mismatch: expected {expect_hash}, loaded pack has "
+            f"{loaded.pack_hash}. The frozen target and this pack are not the same "
+            "artifact — refusing to run.[/red]"
+        )
+        raise typer.Exit(code=3)
+
+    settings = Settings()
+    try:
+        api_key = settings.require_anthropic_api_key()
+    except RuntimeError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
+    gateway = AnthropicStructuredModel(
+        api_key,
+        workspace_id=settings.optional_anthropic_workspace_id(),
+    )
+
+    total = limit if limit is not None else len(loaded.cases)
+    console.print(
+        f"[bold]Benchmark suite[/bold] — {model} | pack {loaded.pack_version} "
+        f"({loaded.pack_hash[:16]}…) | {total} cases x {repeat} run(s), paid"
+    )
+
+    def show(outcome: CaseOutcome) -> None:
+        if outcome.run is not None:
+            score = outcome.run.score
+            cost = f"${outcome.run.cost_usd:.4f}" if outcome.run.cost_usd else "?"
+            console.print(
+                f"  {outcome.case_id}: top1={'HIT' if score.top1_correct else 'miss'} "
+                f"recall@3={score.top3_recall:.2f} "
+                f"invalid_ev={score.invalid_evidence_id_count} "
+                f"violations={score.critical_policy_violations} {cost}"
+            )
+        else:
+            console.print(f"  [red]{outcome.case_id}: FAILED — {outcome.error}[/red]")
+
+    result = run_benchmark_suite(
+        loaded, gateway, model,
+        repo_root=repo_root, limit=limit, repeat=repeat, on_case=show,
+    )
+
+    report = result.report
+    console.print(f"\n[bold]Report — {model} on {report.pack_version}[/bold]")
+    table = Table(show_header=False)
+    table.add_column("Metric")
+    table.add_column("Value", justify="right")
+
+    def fmt(value: float | None, pct: bool = False) -> str:
+        if value is None:
+            return "n/a"
+        return f"{value:.0%}" if pct else f"{value:.3f}"
+
+    table.add_row("Cases scored / attempted", f"{report.run_count}/{result.record.case_count}")
+    table.add_row("Top-1 accuracy", fmt(report.top1_accuracy, pct=True))
+    table.add_row("Top-3 recall", fmt(report.mean_top3_recall, pct=True))
+    table.add_row("Rank correlation", fmt(report.mean_rank_correlation))
+    table.add_row(
+        "Evidence citation validity", fmt(report.mean_evidence_citation_validity, pct=True)
+    )
+    table.add_row("Invalid evidence IDs", str(report.total_invalid_evidence_ids))
+    table.add_row("Decoy in top-3", fmt(report.mean_decoy_top3_rate, pct=True))
+    table.add_row("Unsupported ROI rate", fmt(report.mean_unsupported_roi_rate, pct=True))
+    table.add_row("ROI band coverage", fmt(report.mean_roi_band_coverage, pct=True))
+    table.add_row("ROI calibration error", fmt(report.mean_roi_calibration_error))
+    table.add_row("Policy detection", fmt(report.mean_policy_detection_rate, pct=True))
+    table.add_row("Critical policy violations", str(report.total_critical_policy_violations))
+    table.add_row("Confidence Brier", fmt(report.mean_confidence_calibration_error))
+    table.add_row("Top-1 stability", fmt(report.top1_stability, pct=True))
+    table.add_row("Tokens in/out", f"{report.total_input_tokens:,}/{report.total_output_tokens:,}")
+    cost_text = f"${report.total_cost_usd:.4f}" if report.total_cost_usd is not None else "unknown"
+    table.add_row("Estimated cost", cost_text)
+    console.print(table)
+
+    if result.record.failed_case_ids:
+        console.print(
+            f"[yellow]Failed cases (excluded from report): "
+            f"{', '.join(result.record.failed_case_ids)}[/yellow]"
+        )
+    console.print(f"Artifacts: {result.run_dir}")
 
 
 @app.command("benchmark-validate")
