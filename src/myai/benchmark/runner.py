@@ -44,6 +44,7 @@ class SuiteRecord(BaseModel):
     pack_hash: str
     scorer_version: str = SCORER_VERSION
     effort: str = "high"
+    artifact_write_errors: list[str] = Field(default_factory=list)
     started_at: datetime
     repeat: int = Field(ge=1)
     case_count: int = Field(ge=0)
@@ -59,6 +60,16 @@ class SuiteResult(BaseModel):
 
 
 ProgressFn = Callable[[CaseOutcome], None]
+
+
+def _persist(path: Path, text: str) -> str | None:
+    """Best-effort artifact write. A full disk must not lose a paid model result:
+    the scored outcome stays in memory and the failure is reported on the record."""
+    try:
+        path.write_text(text)
+    except OSError as exc:
+        return f"{path.name}: {exc}"
+    return None
 
 
 def rescore_run_dir(run_dir: Path, pack: BenchmarkPack) -> BenchmarkReport:
@@ -127,6 +138,7 @@ def run_benchmark_suite(
 
     cases = pack.observable_cases()[: limit if limit is not None else len(pack.cases)]
     outcomes: list[CaseOutcome] = []
+    write_errors: list[str] = []
     for case in cases:
         request = build_context_request(case.company, case.evidence, model, effort=effort)
         input_hash = request_input_hash(request)
@@ -153,19 +165,20 @@ def run_benchmark_suite(
                 )
                 outcome = CaseOutcome(case_id=case.case_id, ok=True, run=run)
                 if run_dir is not None:
-                    (run_dir / f"{label}.request.json").write_text(
-                        request.model_dump_json(indent=2) + "\n"
-                    )
-                    (run_dir / f"{label}.output.json").write_text(
-                        result.value.model_dump_json(indent=2) + "\n"
-                    )
-                    (run_dir / f"{label}.score.json").write_text(
-                        run.model_dump_json(indent=2) + "\n"
-                    )
+                    for name, payload in (
+                        (f"{label}.request.json", request.model_dump_json(indent=2)),
+                        (f"{label}.output.json", result.value.model_dump_json(indent=2)),
+                        (f"{label}.score.json", run.model_dump_json(indent=2)),
+                    ):
+                        error = _persist(run_dir / name, payload + "\n")
+                        if error is not None:
+                            write_errors.append(error)
             except Exception as exc:  # noqa: BLE001 - a case failure must not kill the suite
                 outcome = CaseOutcome(case_id=case.case_id, ok=False, error=str(exc))
                 if run_dir is not None:
-                    (run_dir / f"{label}.error.txt").write_text(str(exc) + "\n")
+                    error = _persist(run_dir / f"{label}.error.txt", str(exc) + "\n")
+                    if error is not None:
+                        write_errors.append(error)
             outcomes.append(outcome)
             if on_case is not None:
                 on_case(outcome)
@@ -180,11 +193,17 @@ def run_benchmark_suite(
         started_at=started,
         repeat=repeat,
         effort=effort,
+        artifact_write_errors=write_errors,
         case_count=len(cases),
         succeeded=len(succeeded),
         failed_case_ids=sorted({o.case_id for o in outcomes if not o.ok}),
     )
     if run_dir is not None:
-        (run_dir / "suite.json").write_text(record.model_dump_json(indent=2) + "\n")
-        (run_dir / "report.json").write_text(report.model_dump_json(indent=2) + "\n")
+        for name, payload in (
+            ("suite.json", record.model_dump_json(indent=2)),
+            ("report.json", report.model_dump_json(indent=2)),
+        ):
+            error = _persist(run_dir / name, payload + "\n")
+            if error is not None:
+                record.artifact_write_errors.append(error)
     return SuiteResult(record=record, report=report, outcomes=outcomes, run_dir=run_dir)

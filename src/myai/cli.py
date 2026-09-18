@@ -336,6 +336,13 @@ def benchmark_run(
 
     _print_report(result.report, attempted=result.record.case_count)
 
+    if result.record.artifact_write_errors:
+        console.print(
+            f"[yellow]WARNING: {len(result.record.artifact_write_errors)} artifact "
+            "write(s) failed (disk full?). Scores above are complete and correct, but "
+            "this run may not be rescoreable later. First error: "
+            f"{result.record.artifact_write_errors[0]}[/yellow]"
+        )
     if result.record.failed_case_ids:
         console.print(
             f"[yellow]Failed cases (excluded from report): "

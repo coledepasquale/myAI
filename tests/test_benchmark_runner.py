@@ -135,6 +135,25 @@ def test_rescore_reproduces_stored_run_and_guards_pack_identity(
         rescore_run_dir(live.run_dir, other)
 
 
+def test_disk_write_failure_does_not_lose_paid_results(
+    pack: BenchmarkPack, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import myai.benchmark.runner as runner_module
+
+    monkeypatch.setattr(
+        runner_module, "_persist", lambda path, text: f"{path.name}: disk full"
+    )
+
+    result = run_benchmark_suite(pack, FakeGateway(), "fake-model", repo_root=tmp_path)
+
+    # Every paid result is still scored and reported despite zero artifacts landing.
+    assert result.record.succeeded == 2
+    assert result.report.run_count == 2
+    assert result.report.top1_accuracy is not None
+    assert len(result.record.artifact_write_errors) == 8  # 3 per case + suite + report
+    assert "disk full" in result.record.artifact_write_errors[0]
+
+
 def test_suite_without_repo_root_persists_nothing(pack: BenchmarkPack) -> None:
     result = run_benchmark_suite(pack, FakeGateway(), "fake-model")
     assert result.run_dir is None
