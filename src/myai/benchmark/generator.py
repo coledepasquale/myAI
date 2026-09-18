@@ -136,8 +136,11 @@ class GeneratorParams(BaseModel):
     band_width: float = Field(default=0.35, gt=0.0, lt=1.0)
     high_value_floor_usd: float = Field(default=12_000.0, gt=0)
     labor_rates_usd_per_hour: LaborRates = Field(default_factory=LaborRates)
+    # Author-judged (2026-09-18): quote prep is mostly data acquisition/assembly,
+    # which the system handles — the human reviews and approves (0.8). Policy Q&A
+    # is a well-scoped knowledge-base agent, so deflection runs high (0.85).
     automatable_fraction: dict[str, float] = Field(
-        default_factory=lambda: {QUOTE: 0.6, SUPPORT: 0.85, FINANCE: 0.8, POLICY: 0.5}
+        default_factory=lambda: {QUOTE: 0.8, SUPPORT: 0.85, FINANCE: 0.8, POLICY: 0.85}
     )
 
     @model_validator(mode="after")

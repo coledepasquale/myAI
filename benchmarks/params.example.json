@@ -23,9 +23,9 @@
   },
   "_automatable_fraction": "Share of the observed labor an AI intervention can realistically remove.",
   "automatable_fraction": {
-    "quote_automation": 0.6,
+    "quote_automation": 0.8,
     "support_triage": 0.85,
     "finance_reporting": 0.8,
-    "policy_selfservice": 0.5
+    "policy_selfservice": 0.85
   }
 }
