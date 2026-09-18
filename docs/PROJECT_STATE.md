@@ -533,9 +533,11 @@ Before official runs:
 - ensure costs/tokens/latency are recorded;
 - ensure failed runs cannot silently count as valid benchmark cases.
 
-### Step 5 — Run official frontier baselines — **IN PROGRESS**
+### Step 5 — Run official frontier baselines — **DONE (2026-09-18)**
 
-**Sonnet 5 reference suite complete (2026-09-18):** 20/20 cases, top-1 75%, top-3 recall 95%, rank correlation 0.919, zero fabricated evidence IDs, zero policy violations, unsupported ROI 11%, ROI calibration error 0.180, Brier 0.213, cost $1.12. Full record and interpretation: [`experiments/2026-09-18-sonnet-official-baseline.md`](experiments/2026-09-18-sonnet-official-baseline.md). Matcher tripwire clean (unmatched rate 0%), and `myai benchmark-rescore` reproduced the stored run exactly. **Opus 5 (primary control) and Fable 5.1 (ceiling) runs are the immediate next actions.**
+All three suites complete, 20/20 each. Headline: **Opus 5 (primary control) scores 95% top-1 / 100% top-3 / rho 0.975 — discovery and ranking are near-ceiling for one-shot prompting on this pack.** Grounding and policy safety are commodity (zero fabrications/violations for all models). The only open axis is value: unsupported ROI (Sonnet 11% / Opus 26% / Fable 5%), ROI calibration error (0.180 / 0.568 / 0.329), band coverage (88% / 73% / 78%). Full table, decisiveness caveats, and interpretation: [`experiments/2026-09-18-official-baseline-report.md`](experiments/2026-09-18-official-baseline-report.md).
+
+**Sequencing consequence — read before building anything:** the structured Company Model can no longer be justified by discovery improvement (the charter's falsification rule applies). Before implementing Step 6, run a **baseline-v0.2 hardened-prompt experiment**: same one-shot control, prompt extended with an explicit abstention policy (no `annual_value_usd` unless volume, time, and rate are all evidence-supported) and assumption disclosure. If prompt-level discipline closes the value gap too, the kill gate (Step 7) applies to the architecture thesis on this benchmark and the correct responses are those listed there (narrow the wedge, keep only measurably-helpful pieces, or redirect the thesis toward the intervention/measurement loop the benchmark does not yet test). Keep baseline-v0.1 frozen; v0.2 is a separate tracked prompt version. Also worth buying before big conclusions: a `--repeat 3` stability measurement on selected cases (top-1 differences of 2/20 are within single-run noise).
 
 ### Step 5 (original plan) — Run official frontier baselines
 
@@ -666,8 +668,9 @@ Current status is:
 - **First Sonnet smoke experiment:** complete and technically successful.
 - **M1.5 public benchmark/evaluator framework:** complete.
 - **Private Northstar answer key:** authored and frozen 2026-09-18 (`northstar-v1`, `a4174c2c…`).
-- **Benchmark runner:** implemented; official suite not yet executed.
-- **Official trusted baseline:** **not yet established** — next step.
+- **Benchmark runner:** implemented and exercised (disk-full-resilient, offline rescore verified).
+- **Official trusted baseline:** **established 2026-09-18** — Sonnet/Opus/Fable, 20 cases each, frozen report in `experiments/2026-09-18-official-baseline-report.md`. Opus one-shot near-ceiling on discovery; value calibration is the only open axis.
+- **Baseline-v0.2 hardened-prompt control:** not yet run — required before Step 6.
 - **Company Model / structured opportunity engine:** not yet built.
 - **Intervention sandbox:** not yet built.
 - **Evidence that myAI beats frontier one-shot reasoning:** **none yet**.
