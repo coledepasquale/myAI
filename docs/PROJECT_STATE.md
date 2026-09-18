@@ -601,6 +601,10 @@ The crucial rule is comparative: **System C must earn its added complexity over 
 
 ---
 
+## 13.5 Post-kill-gate strategic assessment (2026-09-18)
+
+The services option from Step 7 was researched and scored against the founder's commit criteria in [`research/services-pivot-assessment.md`](research/services-pivot-assessment.md). Summary: real demand (AI-naive mid-market buyers confirmed), no structural white space (frontier labs entered implementation services at $4B/$1.5B scale in May 2026; bottom tier flooded), income-business economics (~5–10% probability of a $5M+ outcome as pure services). Recommended shape if pursued: time-boxed services-as-discovery with a measured-outcome positioning, tracking percent-effort-reused per engagement as the productization signal.
+
 ## 14. Open design questions
 
 These remain intentionally unresolved until the benchmark generates evidence:
