@@ -38,6 +38,7 @@ class BenchmarkReport(BaseModel):
     case_count: int = Field(ge=0)
     top1_accuracy: float | None = None
     mean_top3_recall: float | None = None
+    mean_unmatched_opportunity_rate: float | None = None
     mean_rank_correlation: float | None = None
     mean_evidence_citation_validity: float | None = None
     total_invalid_evidence_ids: int = Field(default=0, ge=0)
@@ -101,6 +102,9 @@ def build_report(
             mean(1.0 if score.top1_correct else 0.0 for score in scores) if scores else None
         ),
         mean_top3_recall=_mean_of([score.top3_recall for score in scores]),
+        mean_unmatched_opportunity_rate=_mean_of(
+            [score.unmatched_opportunity_rate for score in scores]
+        ),
         mean_rank_correlation=_mean_of([score.rank_correlation for score in scores]),
         mean_evidence_citation_validity=_mean_of(
             [score.evidence_citation_validity for score in scores]

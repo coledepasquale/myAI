@@ -13,7 +13,8 @@ from myai.baseline import baseline_input_hash, build_baseline_request, run_basel
 from myai.benchmark import FilesystemPackLoader, default_pack_path
 from myai.benchmark.generator import generate_pack, load_params
 from myai.benchmark.loader import PACK_ENV_VAR
-from myai.benchmark.runner import CaseOutcome, run_benchmark_suite
+from myai.benchmark.report import BenchmarkReport
+from myai.benchmark.runner import CaseOutcome, rescore_run_dir, run_benchmark_suite
 from myai.fixtures import CompanyFixture, northstar_fixture
 from myai.providers.anthropic import AnthropicStructuredModel
 from myai.run_store import save_baseline_run
@@ -333,8 +334,19 @@ def benchmark_run(
         repo_root=repo_root, limit=limit, repeat=repeat, effort=effort, on_case=show,
     )
 
-    report = result.report
-    console.print(f"\n[bold]Report — {model} on {report.pack_version}[/bold]")
+    _print_report(result.report, attempted=result.record.case_count)
+
+    if result.record.failed_case_ids:
+        console.print(
+            f"[yellow]Failed cases (excluded from report): "
+            f"{', '.join(result.record.failed_case_ids)}[/yellow]"
+        )
+    console.print(f"Artifacts: {result.run_dir}")
+
+
+def _print_report(report: BenchmarkReport, attempted: int | None = None) -> None:
+    console.print(f"\n[bold]Report — {report.model} on {report.pack_version}[/bold]")
+    console.print(f"Pack hash: {report.pack_hash[:16]}… | scorer: {report.scorer_version}")
     table = Table(show_header=False)
     table.add_column("Metric")
     table.add_column("Value", justify="right")
@@ -344,9 +356,13 @@ def benchmark_run(
             return "n/a"
         return f"{value:.0%}" if pct else f"{value:.3f}"
 
-    table.add_row("Cases scored / attempted", f"{report.run_count}/{result.record.case_count}")
+    scored = f"{report.run_count}/{attempted}" if attempted is not None else str(report.run_count)
+    table.add_row("Cases scored / attempted", scored)
     table.add_row("Top-1 accuracy", fmt(report.top1_accuracy, pct=True))
     table.add_row("Top-3 recall", fmt(report.mean_top3_recall, pct=True))
+    table.add_row(
+        "Unmatched opportunity rate", fmt(report.mean_unmatched_opportunity_rate, pct=True)
+    )
     table.add_row("Rank correlation", fmt(report.mean_rank_correlation))
     table.add_row(
         "Evidence citation validity", fmt(report.mean_evidence_citation_validity, pct=True)
@@ -365,12 +381,23 @@ def benchmark_run(
     table.add_row("Estimated cost", cost_text)
     console.print(table)
 
-    if result.record.failed_case_ids:
-        console.print(
-            f"[yellow]Failed cases (excluded from report): "
-            f"{', '.join(result.record.failed_case_ids)}[/yellow]"
-        )
-    console.print(f"Artifacts: {result.run_dir}")
+
+@app.command("benchmark-rescore")
+def benchmark_rescore(
+    run_dir: Annotated[Path, typer.Argument(exists=True, file_okay=False)],
+    pack: PackOption = None,
+    root: RootOption = None,
+) -> None:
+    """Re-score a stored suite's outputs under the current scorer. Free — no API calls."""
+    repo_root = root or Path.cwd()
+    pack_path = pack or default_pack_path(repo_root)
+    try:
+        loaded = FilesystemPackLoader(pack_path).load()
+        report = rescore_run_dir(run_dir, loaded)
+    except (FileNotFoundError, ValueError) as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
+    _print_report(report)
 
 
 @app.command("benchmark-validate")

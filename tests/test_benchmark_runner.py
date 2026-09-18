@@ -115,6 +115,26 @@ def test_limit_and_repeat_control_paid_call_volume(pack: BenchmarkPack) -> None:
     assert result.report.top1_stability == pytest.approx(1.0)
 
 
+def test_rescore_reproduces_stored_run_and_guards_pack_identity(
+    pack: BenchmarkPack, tmp_path: Path
+) -> None:
+    from myai.benchmark.runner import rescore_run_dir
+
+    live = run_benchmark_suite(pack, FakeGateway(), "fake-model", repo_root=tmp_path)
+    assert live.run_dir is not None
+
+    rescored = rescore_run_dir(live.run_dir, pack)
+
+    assert rescored.top1_accuracy == live.report.top1_accuracy
+    assert rescored.mean_top3_recall == live.report.mean_top3_recall
+    assert rescored.mean_evidence_citation_validity == live.report.mean_evidence_citation_validity
+    assert rescored.pack_hash == pack.pack_hash
+
+    other = pack.model_copy(update={"pack_version": "different"})
+    with pytest.raises(ValueError, match="refusing to rescore"):
+        rescore_run_dir(live.run_dir, other)
+
+
 def test_suite_without_repo_root_persists_nothing(pack: BenchmarkPack) -> None:
     result = run_benchmark_suite(pack, FakeGateway(), "fake-model")
     assert result.run_dir is None

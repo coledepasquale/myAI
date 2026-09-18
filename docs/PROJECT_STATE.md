@@ -533,7 +533,11 @@ Before official runs:
 - ensure costs/tokens/latency are recorded;
 - ensure failed runs cannot silently count as valid benchmark cases.
 
-### Step 5 — Run official frontier baselines
+### Step 5 — Run official frontier baselines — **IN PROGRESS**
+
+**Sonnet 5 reference suite complete (2026-09-18):** 20/20 cases, top-1 75%, top-3 recall 95%, rank correlation 0.919, zero fabricated evidence IDs, zero policy violations, unsupported ROI 11%, ROI calibration error 0.180, Brier 0.213, cost $1.12. Full record and interpretation: [`experiments/2026-09-18-sonnet-official-baseline.md`](experiments/2026-09-18-sonnet-official-baseline.md). Matcher tripwire clean (unmatched rate 0%), and `myai benchmark-rescore` reproduced the stored run exactly. **Opus 5 (primary control) and Fable 5.1 (ceiling) runs are the immediate next actions.**
+
+### Step 5 (original plan) — Run official frontier baselines
 
 Suggested initial suite after the evaluator is frozen:
 

@@ -63,6 +63,7 @@ def test_report_aggregates_means_totals_and_metadata() -> None:
     assert report.run_count == 2
     assert report.case_count == 2
     assert report.top1_accuracy == pytest.approx(0.5)
+    assert report.mean_unmatched_opportunity_rate == pytest.approx(0.0)
     assert report.mean_rank_correlation == pytest.approx(0.0)
     assert report.total_invalid_evidence_ids == 2
     assert report.total_critical_policy_violations == 1

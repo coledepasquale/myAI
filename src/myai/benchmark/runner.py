@@ -61,6 +61,48 @@ class SuiteResult(BaseModel):
 ProgressFn = Callable[[CaseOutcome], None]
 
 
+def rescore_run_dir(run_dir: Path, pack: BenchmarkPack) -> BenchmarkReport:
+    """Re-score a stored suite's outputs under the current scorer — no API calls.
+
+    This is the scorer-upgrade path promised in ADR 0002: because every run
+    persists its raw outputs, a matcher/scoring change can be applied uniformly
+    to history. Operational metadata (tokens/latency/cost) is not recomputed.
+    """
+    record = SuiteRecord.model_validate_json((run_dir / "suite.json").read_text())
+    if record.pack_hash != pack.pack_hash:
+        raise ValueError(
+            f"run {record.id} was measured against pack {record.pack_hash[:16]}…, "
+            f"not the loaded pack {pack.pack_hash[:16]}… — refusing to rescore"
+        )
+    runs: list[CaseRun] = []
+    for output_file in sorted(run_dir.glob("*.output.json")):
+        case_id = output_file.name.split(".output.json")[0].split("#")[0]
+        case = pack.case(case_id)
+        output = BaselineOutput.model_validate_json(output_file.read_text())
+        request_file = run_dir / output_file.name.replace(".output.", ".request.")
+        input_hash = ""
+        if request_file.is_file():
+            from myai.model_gateway import ModelRequest
+
+            input_hash = request_input_hash(
+                ModelRequest.model_validate_json(request_file.read_text())
+            )
+        score = score_case(case, pack.answer(case_id), pack.category_rules, output)
+        predicted = predicted_category_order(output.opportunities, pack.category_rules)
+        runs.append(
+            CaseRun(
+                score=score,
+                model=record.model,
+                prompt_version="baseline-v0.1",
+                input_hash=input_hash,
+                predicted_top1=predicted[0] if predicted else None,
+            )
+        )
+    if not runs:
+        raise ValueError(f"no output artifacts found in {run_dir}")
+    return build_report(pack.pack_version, pack.pack_hash, record.model, runs)
+
+
 def run_benchmark_suite(
     pack: BenchmarkPack,
     gateway: StructuredModel,
