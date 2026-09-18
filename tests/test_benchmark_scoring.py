@@ -214,6 +214,23 @@ def test_confidence_calibration_punishes_confident_wrong_picks(pack: BenchmarkPa
     assert good < bad
 
 
+def test_unmatched_opportunities_are_excluded_from_calibration(pack: BenchmarkPack) -> None:
+    # A confident but unclassifiable opportunity is a taxonomy gap, reported via
+    # unmatched_opportunity_rate; it must not drag the Brier score.
+    output = BaselineOutput(
+        opportunities=[
+            opportunity("Automate the alpha workflow", value=100_000, confidence=0.9),
+            opportunity("Buy new office chairs", confidence=1.0, problem="", proposed_change=""),
+        ]
+    )
+
+    score = score_case(pack.case("toy-001"), pack.answer("toy-001"), pack.category_rules, output)
+
+    assert score.unmatched_opportunity_rate == pytest.approx(0.5)
+    # Brier over the matched opportunity only: (0.9 - 1.0)^2 = 0.01
+    assert score.confidence_calibration_error == pytest.approx(0.01)
+
+
 def test_empty_output_scores_zero_without_crashing(pack: BenchmarkPack) -> None:
     score = score_case(
         pack.case("toy-001"), pack.answer("toy-001"), pack.category_rules, BaselineOutput()

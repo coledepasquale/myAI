@@ -71,6 +71,7 @@ def test_report_aggregates_means_totals_and_metadata() -> None:
     assert report.total_cost_usd == pytest.approx(0.03)
     assert report.mean_latency_ms == pytest.approx(2000.0)
     assert report.pack_hash == "abc123"
+    assert report.scorer_version.startswith("scorer-v")
 
 
 def test_report_refuses_to_mix_models() -> None:

@@ -12,7 +12,7 @@ from statistics import mean
 
 from pydantic import BaseModel, Field
 
-from myai.benchmark.scoring import CaseScore
+from myai.benchmark.scoring import SCORER_VERSION, CaseScore
 
 
 class CaseRun(BaseModel):
@@ -32,6 +32,7 @@ class CaseRun(BaseModel):
 class BenchmarkReport(BaseModel):
     pack_version: str
     pack_hash: str
+    scorer_version: str = SCORER_VERSION
     model: str
     run_count: int = Field(ge=0)
     case_count: int = Field(ge=0)

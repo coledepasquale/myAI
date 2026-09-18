@@ -19,6 +19,10 @@ from myai.domain import Opportunity
 
 TOP_K = 3
 
+# Bump whenever scoring semantics change (e.g. a smarter matcher). Reports carry
+# this so "rescored under a newer scorer" is a traceable claim, not a guess.
+SCORER_VERSION = "scorer-v0.2"
+
 
 class CaseScore(BaseModel):
     """Per-case scorecard. ``None`` means "not applicable to this case"."""
@@ -156,18 +160,23 @@ def _critical_policy_violations(
 
 
 def _confidence_calibration_error(
-    matched_all: Sequence[tuple[Opportunity, str | None]],
+    matched: Sequence[tuple[Opportunity, str]],
     answer: CaseAnswerKey,
 ) -> float | None:
-    """Brier score of stated confidence against "is this truly high value?"."""
-    if not matched_all:
+    """Brier score of stated confidence against "is this truly high value?".
+
+    Only classified opportunities are scored: an unmatched one is a taxonomy
+    gap, already reported via unmatched_opportunity_rate, and folding it in
+    here would punish calibration for a failure of the matcher instead.
+    """
+    if not matched:
         return None
     high_value = set(answer.high_value_categories)
     total = 0.0
-    for opportunity, category in matched_all:
-        outcome = 1.0 if category is not None and category in high_value else 0.0
+    for opportunity, category in matched:
+        outcome = 1.0 if category in high_value else 0.0
         total += (opportunity.confidence - outcome) ** 2
-    return total / len(matched_all)
+    return total / len(matched)
 
 
 def score_case(
@@ -221,5 +230,5 @@ def score_case(
             " ".join(opportunity_text(item) for item in opportunities), answer
         ),
         critical_policy_violations=_critical_policy_violations(opportunities, answer),
-        confidence_calibration_error=_confidence_calibration_error(matched_all, answer),
+        confidence_calibration_error=_confidence_calibration_error(matched, answer),
     )
