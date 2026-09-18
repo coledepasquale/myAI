@@ -502,7 +502,9 @@ Delivered: typed case/answer/pack schemas, private-pack loader contract, rank/ev
 
 Create the real holdout cases locally/private. Decide the hidden outcome/value/policy truth **before** running large frontier-model batches.
 
-The format and a worked example are in [`../benchmarks/README.md`](../benchmarks/README.md#authoring-a-private-pack). Write `benchmarks/private/pack.json` (git-ignored), then:
+**A parameterized generator now exists** (`src/myai/benchmark/generator.py`, `myai benchmark-generate`): the human author supplies a private params file (seed, loaded labor rates, automatable fractions, band width, floor) and the generator derives observable evidence and hidden truth from the same drawn numbers, recomputed from displayed values. This was chosen over hand-authoring 20 variants because it guarantees evidence/answer consistency and keeps the coding agent blind to specific case answers (the agent knows the formulas — which are the task definition — but not the seed or draws). The format for manual authoring also remains documented in [`../benchmarks/README.md`](../benchmarks/README.md#authoring-a-private-pack).
+
+The human author's remaining duties: set a private seed, approve the business constants in the params file, spot-check several cases in the generated `manifest.json` for realism, then:
 
 ```bash
 myai benchmark-validate

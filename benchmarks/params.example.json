@@ -1,0 +1,31 @@
+{
+  "_readme": [
+    "Template for the PRIVATE benchmark generator parameters.",
+    "Copy to benchmarks/private/params.json (git-ignored), set a seed, then run:",
+    "  myai benchmark-generate",
+    "The seed plus these values fully determine the hidden answers.",
+    "Never commit the private copy and never paste it (or the generated pack/manifest) into a chat."
+  ],
+  "seed": null,
+  "pack_version": "northstar-v1",
+  "case_count": 20,
+  "_band_width": "How wide a 'defensible' ROI range is: 0.35 means truth +/-35%.",
+  "band_width": 0.35,
+  "_high_value_floor_usd": "Annual value below this does not count as a must-find opportunity.",
+  "high_value_floor_usd": 12000,
+  "_labor_rates_usd_per_hour": "Fully loaded cost (wage x ~1.4 for benefits/overhead), USD/hour.",
+  "labor_rates_usd_per_hour": {
+    "sales_rep": 44.0,
+    "support_agent": 29.0,
+    "finance_analyst": 52.0,
+    "employee": 36.0,
+    "manager": 62.0
+  },
+  "_automatable_fraction": "Share of the observed labor an AI intervention can realistically remove.",
+  "automatable_fraction": {
+    "quote_automation": 0.6,
+    "support_triage": 0.85,
+    "finance_reporting": 0.8,
+    "policy_selfservice": 0.5
+  }
+}

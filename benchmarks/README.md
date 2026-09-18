@@ -64,6 +64,23 @@ The runtime/baseline sees only the observable variant. The private evaluator see
 
 ## Authoring a private pack
 
+### Recommended path: the generator
+
+`src/myai/benchmark/generator.py` builds a full pack from a private parameter file. Hidden truth is computed mechanically from the numbers rendered into the observable evidence (annual value = volume x minutes/60 x loaded labor rate x automatable fraction), recomputed from the rounded displayed values so evidence and answers can never disagree. Eight archetypes cycle across cases: quote-dominant, triage-dominant, finance-dominant, near-tie, decoy-prominent, insufficient-evidence, policy-trap, and contradictory-evidence.
+
+```bash
+cp benchmarks/params.example.json benchmarks/private/params.json
+# edit: set a private seed; adjust labor rates / automatable fractions if desired
+myai benchmark-generate
+myai benchmark-validate
+```
+
+`benchmark-generate` writes `pack.json` plus a `manifest.json` containing the per-case arithmetic and answers for the author's private review, refuses to write anywhere that is not git-ignored, and prints the pack hash. The seed plus the params fully determine the answers — keep both private, and record the hash to freeze the target.
+
+Case `variant_id`s are deliberately opaque (`v001`, `v002`, ...); the archetype name appears only in the hidden answer notes, so observable metadata cannot hint at the expected ranking.
+
+### Manual path
+
 A pack is a single `pack.json` file. Put it at `benchmarks/private/pack.json` (git-ignored), or anywhere outside the repo and point `MYAI_BENCHMARK_PACK` at it.
 
 ```json

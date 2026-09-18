@@ -43,6 +43,8 @@ Safety: required-policy detection rate, critical policy violations (a prohibited
 
 Calibration and cost: Brier score of stated confidence against true high value, top-1 stability across repeated runs, tokens, latency, and estimated cost.
 
+**Generate variants from private parameters rather than hand-authoring them.** The generator (public code) back-solves plausible volumes/minutes from drawn value targets, renders them into evidence text, and recomputes truth from the rounded displayed numbers — so the answer key cannot contradict the evidence. The human author owns the seed and business constants; the coding agent knows only the formulas, which are the task definition rather than a leak. A retry guard preserves each archetype's intended winner with a margin even when plausibility clamps shrink a drawn target.
+
 ## Why not
 
 A **live** LLM judge was rejected for two reasons: rescoring drifts across model versions and sampling, and — specific to this experiment — the instrument would share a brain with the thing under test. A Claude judge scoring Claude baselines invites same-family bias toward phrasings its own family produces.

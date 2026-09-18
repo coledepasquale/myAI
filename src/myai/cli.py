@@ -11,6 +11,7 @@ from rich.table import Table
 
 from myai.baseline import baseline_input_hash, build_baseline_request, run_baseline_result
 from myai.benchmark import FilesystemPackLoader, default_pack_path
+from myai.benchmark.generator import generate_pack, load_params
 from myai.benchmark.loader import PACK_ENV_VAR
 from myai.fixtures import CompanyFixture, northstar_fixture
 from myai.providers.anthropic import AnthropicStructuredModel
@@ -168,6 +169,80 @@ def _is_tracked_by_git(path: Path) -> bool:
     except OSError:
         return False
     return completed.returncode == 0
+
+
+def _is_git_ignored(repo_root: Path, path: Path) -> bool | None:
+    """True/False when Git can answer; None when the path is outside any repo."""
+    try:
+        completed = subprocess.run(
+            ["git", "check-ignore", "-q", str(path)],
+            capture_output=True,
+            cwd=repo_root,
+            check=False,
+        )
+    except OSError:
+        return None
+    if completed.returncode == 0:
+        return True
+    if completed.returncode == 1:
+        return False
+    return None
+
+
+@app.command("benchmark-generate")
+def benchmark_generate(
+    params: Annotated[Path | None, typer.Option(help="Private generator params JSON")] = None,
+    out: Annotated[Path | None, typer.Option(help="Output directory for pack + manifest")] = None,
+    root: RootOption = None,
+) -> None:
+    """Generate a private Northstar benchmark pack from a private parameter file."""
+    repo_root = root or Path.cwd()
+    params_path = params or repo_root / "benchmarks" / "private" / "params.json"
+    out_dir = out or repo_root / "benchmarks" / "private"
+
+    if not params_path.is_file():
+        console.print(
+            f"[red]No parameter file at {params_path}.[/red]\n"
+            "Copy benchmarks/params.example.json there, set a private seed, and adjust "
+            "rates if desired."
+        )
+        raise typer.Exit(code=2)
+
+    pack_file = out_dir / "pack.json"
+    if _is_git_ignored(repo_root, pack_file) is False:
+        console.print(
+            f"[red]SECURITY: {pack_file} would not be git-ignored. Hidden answers must "
+            "never be committed. Write the pack under benchmarks/private/ or outside "
+            "the repository.[/red]"
+        )
+        raise typer.Exit(code=3)
+
+    try:
+        loaded_params = load_params(params_path.read_text())
+        company = _northstar("northstar", repo_root).company()
+        generated_pack, manifest = generate_pack(loaded_params, company)
+    except (ValueError, RuntimeError) as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from exc
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    pack_file.write_text(generated_pack.model_dump_json(indent=2) + "\n")
+    (out_dir / "manifest.json").write_text(manifest.model_dump_json(indent=2) + "\n")
+
+    console.print(f"[bold]Pack {generated_pack.pack_version}[/bold] written to {pack_file}")
+    console.print(
+        f"Cases: {len(generated_pack.cases)} | "
+        f"Categories: {len(generated_pack.category_rules)}"
+    )
+    console.print(f"Pack hash: [bold]{generated_pack.pack_hash}[/bold]")
+    console.print(
+        "manifest.json beside the pack contains the answers and per-case arithmetic "
+        "for your private review. Never paste either file into a chat or commit."
+    )
+    console.print(
+        "Next: spot-check a few cases in manifest.json, run [bold]myai "
+        "benchmark-validate[/bold], and record the pack hash to freeze the target."
+    )
 
 
 @app.command("benchmark-validate")
