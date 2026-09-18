@@ -263,6 +263,14 @@ def benchmark_run(
     effort: Annotated[
         str, typer.Option(help="Reasoning effort: low|medium|high|xhigh|max (recorded per run)")
     ] = "high",
+    show_scores: Annotated[
+        bool,
+        typer.Option(
+            help="Print per-case verdicts. Leave off when the terminal output may reach "
+            "a coding agent: per-case hits/misses leak answer information; the "
+            "aggregate report does not."
+        ),
+    ] = False,
     root: RootOption = None,
 ) -> None:
     """Run one model over every benchmark case, score against the private pack."""
@@ -301,9 +309,12 @@ def benchmark_run(
     )
 
     def show(outcome: CaseOutcome) -> None:
-        if outcome.run is not None:
+        if outcome.run is None:
+            console.print(f"  [red]{outcome.case_id}: FAILED — {outcome.error}[/red]")
+            return
+        cost = f"${outcome.run.cost_usd:.4f}" if outcome.run.cost_usd else "?"
+        if show_scores:
             score = outcome.run.score
-            cost = f"${outcome.run.cost_usd:.4f}" if outcome.run.cost_usd else "?"
             console.print(
                 f"  {outcome.case_id}: top1={'HIT' if score.top1_correct else 'miss'} "
                 f"recall@3={score.top3_recall:.2f} "
@@ -311,7 +322,11 @@ def benchmark_run(
                 f"violations={score.critical_policy_violations} {cost}"
             )
         else:
-            console.print(f"  [red]{outcome.case_id}: FAILED — {outcome.error}[/red]")
+            console.print(
+                f"  {outcome.case_id}: ok "
+                f"({outcome.run.score.opportunity_count} opportunities, "
+                f"{outcome.run.output_tokens or 0:,} out-tokens, {cost})"
+            )
 
     result = run_benchmark_suite(
         loaded, gateway, model,

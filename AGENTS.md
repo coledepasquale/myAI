@@ -24,6 +24,7 @@ As of 2026-09-17, M0 foundation, the M1 live Anthropic baseline harness, and the
 - This repository is public. Never commit API keys, workspace IDs that should remain private, customer data, or real hidden benchmark answers.
 - `.env`, `runs/`, `artifacts/`, and `benchmarks/private/` are intentionally git-ignored.
 - Never add hidden benchmark truth to normal model/runtime context. `BenchmarkCase` (observable) and `CaseAnswerKey` (hidden) are separate types for this reason; never merge them for convenience.
+- Sessions that build or tune the structured myAI system must consume benchmark results at the **aggregate report level only**. Do not read per-case score files under `runs/benchmark_*/` (`*.score.json`) and do not run `benchmark-run --show-scores` in a context a coding agent can read: per-case hits/misses combined with stored outputs reveal individual hidden answers.
 - Do not make live Anthropic calls in CI. CI must remain deterministic and credential-free.
 - Do not train or fine-tune a model merely because it is technically possible. Training requires a measured repeatable gap and enough labeled trajectories.
 - Do not add a database, graph database, agent framework, polished UI, or production deployment layer unless the current experiment creates a concrete need.
